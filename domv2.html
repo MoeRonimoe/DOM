@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <title>DOM</title>
+    <script src="js/jquery-3.5.1.min.js"></script>
+    <style>
+        .wrapper {
+            width: 100%;
+            height: 100%;
+            float: left;
+            overflow: hidden;
+        }
+
+        .w1 {
+            perspective: 1000px;
+        }
+
+        .wrapper h1 {
+            text-align: center;
+        }
+
+        .wall {
+            position: absolute;
+            /*font-size: 4em;*/
+            /*width: 80em;*/
+            margin: 0em auto;
+
+        }
+
+        .level {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate3d(-211.5em, -10em, -730em);
+            margin-top: 220px;
+        }
+        #camera{
+            position: absolute;
+            top:50%;
+            left: 50%;
+            transform: translate3d(0em, 0em, 1000px) rotateX(0deg) rotateY(180deg) rotateZ(0deg);
+            -webkit-touch-callout: none;                /* prevent callout to copy image, etc when tap to hold */
+            -webkit-user-select: none;                  /* prevent copy paste, to allow, change 'none' to 'text' */
+        }
+        .has3d{
+            transform-style: preserve-3d;
+        }
+
+        .side {
+            position: absolute;
+            /*width: 2em;*/
+            /*height: 0.5em;*/
+            /*background: rgba(215, 186, 180, 0.6);*/
+            border: 1px solid rgba(0, 0, 0, 1);
+            color: white;
+            text-align: center;
+            /*line-height: 2em;*/
+            backface-visibility: hidden;
+            image-rendering: -moz-crisp-edges; /* Firefox */
+            image-rendering: -o-crisp-edges; /* Opera */
+            image-rendering: -webkit-optimize-contrast;/* Webkit (non-standard naming) */
+            image-rendering: crisp-edges;
+            -ms-interpolation-mode: nearest-neighbor; /* IE (non-standard property) */
+        }
+        .plane{
+            transform-origin: left;
+        }
+
+        #playershadow{
+            width: 5em;
+            height: 5em;
+            transform: rotateX(90deg) translateZ(70em);
+            background-color: rgba(0, 0, 0, 0.4);
+            position: absolute;
+            border-radius: 50%;
+        }
+
+        @media only screen and (min-width: 768px) and (max-width: 1024px) {
+            #mobilecontrols{
+                display: block !important;
+                z-index: 100;
+                position: absolute;
+                bottom: 0;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+        #mobilecontrols{
+            display: none;
+            touch-action: none;
+        }
+        .triangle.forward{
+            width: 0;
+            height: 0;
+            border-width: 0 100px 80px 100px;
+            border-color: transparent transparent #FFFFFF55 transparent;
+            border-style: solid;
+            filter: drop-shadow(4px 6px 8px #000000);
+        }
+        .triangle.backward{
+            width: 0;
+            height: 0;
+            border-width: 80px 100px 0 100px;
+            border-color: #FFFFFF55 transparent transparent transparent;
+            border-style: solid;
+            filter: drop-shadow(4px 6px 8px #000000);
+        }
+        #titlescreen{
+            position: absolute;
+            z-index: 100;
+            width: 100vw;
+            height: 100vh;
+            background-color: black;
+            opacity: 1;
+            -webkit-mask: url("https://raw.githubusercontent.com/robin-dela/css-mask-animation/master/img/nature-sprite.png");
+            mask: url("https://raw.githubusercontent.com/robin-dela/css-mask-animation/master/img/nature-sprite.png");
+            -webkit-mask-size: 2300% 100%;
+            mask-size: 2300% 100%;
+            border: none;
+            color: #fff;
+        }
+        .titlemelt{
+            -webkit-animation: ani 0.7s steps(22) forwards;
+            animation: ani 0.7s steps(22) forwards;
+            opacity: 0;
+        }
+        .titleimg{
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            height: 100%;
+            position: sticky;
+            z-index: 666;
+        }
+        body {
+            margin-left: 0;
+            margin-top: -20px;
+        }
+
+        .slide__bg {
+            position: absolute;
+            z-index: 99;
+            top: 50%;
+            left: 50%;
+            -webkit-transform: translate(-50%, -50%) scale(2);
+            transform: translate(-50%, -50%) scale(2);
+            -webkit-filter: blur(50px);
+            filter: blur(50px);
+            /*opacity: 0;*/
+            -webkit-transition: opacity 1s ease;
+            transition: opacity 1s ease;
+            will-change: opacity;
+        }
+        .titletext{
+            color: white;
+            z-index: 666;
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 5em;
+            pointer-events: none;
+            text-align: center;
+        }
+        @-webkit-keyframes ani {
+            from {
+                -webkit-mask-position: 0 0;
+                mask-position: 0 0;
+            }
+            to {
+                -webkit-mask-position: 100% 0;
+                mask-position: 100% 0;
+            }
+        }
+        @keyframes ani {
+            from {
+                -webkit-mask-position: 0 0;
+                mask-position: 0 0;
+            }
+            to {
+                -webkit-mask-position: 100% 0;
+                mask-position: 100% 0;
+            }
+        }
+    </style>
+</head>
+<body translate="no">
+<svg class="slider__mask" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="0 0 1920 1080" width="0" height="0">
+    <defs>
+        <pattern id="bg1" patternUnits="userSpaceOnUse" width="1920" height="1080" viewBox="0 0 1920 1080">
+            <image xlink:href="ass/dom.png"
+                   width="100%" height="100%"/>
+        </pattern>
+    </defs>
+</svg>
+<div id="wrapper" class="wrapper w1">
+    <div id="titlescreen">
+        <svg class="slide__bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"
+             xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1920" height="1080">
+            <rect x="0" y="0" width="1920" height="1080" fill="url(#bg1)"/>
+        </svg>
+        <img src="ass/dom.png" class="titleimg">
+        <code class="titletext">CLICK TO START</code>
+    </div>
+    <div id="camera" class="has3d">
+        <div id="level" class="level has3d">
+            <div id="playershadow"></div>
+        </div>
+    </div>
+    <div id="mobilecontrols">
+        <div class="triangle forward" id="mobileforward"></div>
+        <br>
+        <div class="triangle backward" id="mobilebackward"></div>
+    </div>
+    <canvas id="minimap" width="350" height="300" style="border:1px solid #d3d3d3; display: block; position: absolute; z-index: 1;">
+        Your browser does not support the canvas element.
+    </canvas>
+    <canvas id="minimapplayerlayer" width="350" height="300" style="border:1px solid #d3d3d3; display: block; position: absolute; z-index: 2;">
+        Your browser does not support the canvas element.
+    </canvas>
+</div>
+<script src="js/Mth.js"></script>
+<script>
+    document.onkeydown = checkKey;
+    document.onkeyup = stopMovement;
+    var forward = false;
+    var backward = false;
+    const player = {
+        camerarot: new position(0,0,0),
+        pos: new position(-211.5, 12.5, 730),
+        shadowcenter: function() {
+            return new position(-this.pos.x-2.5, this.pos.z, -this.pos.y);
+        },
+        bb: function (){
+            return getPlayerBoundingBox({a: this.pos,});
+        },
+    };
+    var minimapadjustval = 70;
+    document.getElementById('mobileforward').ontouchstart = function (e) {
+        forward = true;
+    }
+    document.getElementById('mobileforward').ontouchend = function (e) {
+        forward = false;
+    }
+    document.getElementById('mobilebackward').ontouchstart = function (e) {
+        backward = true;
+    }
+    document.getElementById('mobilebackward').ontouchend = function (e) {
+        backward = false;
+    }
+    var rooms = [];
+    var sectorlist = [];
+    var scalefactor = 0.2;
+    var e1m1 = "";
+    var perspective = (Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)))/2;
+
+    $( window ).resize(function() {
+        perspective = (Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)))/2;
+        $('.wrapper').width(window.innerWidth).height(window.innerHeight).css('perspective',perspective);
+    });
+
+    $(document).ready(function () {
+        $('#titlescreen').on('click touch', function (){
+            $(this).addClass("titlemelt").delay(2000).hide(0);
+        });
+        perspective = (Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)))/2;
+
+        var element = document.querySelectorAll(".door");
+        $.getJSON('ass/e1m1_hangar.json', function(data) {
+            e1m1 = data;
+            e1m1['linedef'].forEach(function (linedef,key){
+                addPlane(linedef,key);
+                if(linedef['sidefront'] != 65535){
+                    if(Array.isArray(sectorlist[e1m1['sidedef'][linedef['sidefront']]['sector']])){
+                        sectorlist[e1m1['sidedef'][linedef['sidefront']]['sector']].push(key);
+                    }else{
+                        sectorlist[e1m1['sidedef'][linedef['sidefront']]['sector']] = [];
+                        sectorlist[e1m1['sidedef'][linedef['sidefront']]['sector']].push(key);
+                    }
+                }
+                if(linedef['sideback'] != 65535){
+                    if(Array.isArray(sectorlist[e1m1['sidedef'][linedef['sideback']]['sector']])){
+                        sectorlist[e1m1['sidedef'][linedef['sideback']]['sector']].push(key);
+                    }else{
+                        sectorlist[e1m1['sidedef'][linedef['sideback']]['sector']] = [];
+                        sectorlist[e1m1['sidedef'][linedef['sideback']]['sector']].push(key);
+                    }
+                }
+            });
+            e1m1['sector'].forEach(function(sector,key){
+                addFloor(sector,key);
+                addCeiling(sector,key);
+            });
+        });
+    });
+    var speed = 0;
+
+    function slowdown(){
+        var decreaso = .05;
+        if(speed > 0){
+            if(speed > 0 && speed < decreaso){
+                speed = 0;
+            }else {
+                speed -= decreaso;
+            }
+        }else if(speed < 0){
+            if(speed < 0 && speed > -decreaso){
+                speed = 0;
+            }else {
+                speed += decreaso;
+            }
+        }
+    }
+
+    function checkKey(e) {
+        e = e || window.event;
+        if (e.keyCode == '87') {    // W
+            forward = true;
+            //if(speed<2)
+            //    speed += .5;
+        }
+        if (e.keyCode == '83') {   // S
+            backward = true;
+            //if(speed>-2)
+            //    speed -= .5;
+        }
+        //setTransform();
+    }
+
+    function stopMovement(){
+        forward = false;
+        backward = false;
+    }
+
+    function applySpeed(){
+        var xo = Math.sin(player.camerarot.y * (Math.PI/180));
+        var yo = Math.cos(player.camerarot.y * (Math.PI/180));
+        player.pos.x -= xo * speed;
+        player.pos.z -= yo * speed;
+    }
+
+    function position(x, y, z) {
+        this.x = x || 0;
+        this.y = y || 0;
+        this.z = z || 0;
+    }
+    window.addEventListener('touchend', event => {
+        event.preventDefault();
+    });
+
+    var lastpos = new position(0, 0, 0);
+    document.addEventListener("mousemove", function (ev) {
+        if(true){//!forward && !backward) {
+            player.camerarot.x -= (ev.pageY - lastpos.y) / 2;
+            if (player.camerarot.x <= -90) {
+                player.camerarot.x = -90;
+            }
+            if (player.camerarot.x >= 90) {
+                player.camerarot.x = 90;
+            }
+            player.camerarot.y += (ev.pageX - lastpos.x) / 2;
+            while (player.camerarot.y > 360 || player.camerarot.y < -360) {  //wollen ja nicht das sie zu groß wird :)
+                if (player.camerarot.y > 360) {
+                    player.camerarot.y -= 360;
+                } else if (player.camerarot.y < -360) {
+                    player.camerarot.y += 360;
+                }
+            }
+            lastpos.x = ev.pageX;
+            lastpos.y = ev.pageY;
+        }
+    }, false);
+    var camera = document.getElementById('camera');
+    camera.addEventListener('touchmove', function (e){
+        var clkEvt = document.createEvent('MouseEvent');
+        clkEvt.initMouseEvent('mousemove', true, true, window, e.detail,
+            e.touches[0].screenX, e.touches[0].screenY,
+            e.touches[0].clientX, e.touches[0].clientY,
+            false, false, false, false,
+            0, null);
+        camera.dispatchEvent(clkEvt);
+    },false);
+
+    function setTransform() {
+        $("#camera").get(0).style.setProperty("transform", "translate3d(0em, 0em, "+(perspective)+"px) rotateX(" + player.camerarot.x + "deg) rotateY(" + player.camerarot.y + "deg) rotateZ(" + player.camerarot.z + "deg)");  //Improve Quality:  scale3d(20,20,20)
+        $(".level").get(0).style.setProperty("transform", "translate3d(" + player.pos.x + "em, -5em, " + (-player.pos.z) + "em)");
+        $('.wrapper').get(0).style.setProperty("background-position-x", -player.camerarot.y * 15 +"px");
+        $('.wrapper').get(0).style.setProperty("background-size", "100% "+ (150+player.camerarot.x) + "%");
+        if ( $( "#playershadow" ).length ) {
+            $("#playershadow").get(0).style.setProperty("transform", "rotateX(90deg) translate3d(" + player.shadowcenter().x + "em, " + player.shadowcenter().y + "em, " + player.shadowcenter().z + "em)");
+        }
+    }
+
+    function getMinMaxSectorVals(secnr){
+        var min_x = 100000;
+        var min_y = 100000;
+        var max_x = -140000;
+        var max_y = -140000;
+        sectorlist[secnr].forEach(function(linedefnr,key){
+            var v1 = e1m1['vertex'][e1m1['linedef'][parseInt(linedefnr)]['v1']];
+            var v2 = e1m1['vertex'][e1m1['linedef'][parseInt(linedefnr)]['v2']];
+            //Min
+            if(parseFloat(v1['x']) < min_x){
+                min_x = parseFloat(v1['x']);
+            }
+            if(parseFloat(v2['x']) < min_x){
+                min_x = parseFloat(v2['x']);
+            }
+            if(parseFloat(v1['y']) < min_y){
+                min_y = parseFloat(v1['y']);
+            }
+            if(parseFloat(v2['x']) < min_y){
+                min_y = parseFloat(v2['x']);
+            }
+            //Max
+            if(parseFloat(v1['x']) > max_x){
+                max_x = parseFloat(v1['x']);
+            }
+            if(parseFloat(v2['x']) > max_x){
+                max_x = parseFloat(v2['x']);
+            }
+            if(parseFloat(v1['y']) > max_y){
+                max_y = parseFloat(v1['y']);
+            }
+            if(parseFloat(v2['y']) > max_y){
+                max_y = parseFloat(v2['y']);
+            }
+        });
+        return {'min_x':min_x,'max_x':max_x,'min_y':min_y,'max_y':max_y}
+    }
+
+    function ListSectorAngles(secnr){
+        var secminmax = getMinMaxSectorVals(secnr);
+        var xdif = secminmax['max_x'] - secminmax['min_x'];
+        var ydif = secminmax['max_y'] - secminmax['min_y'];
+        var center = {'x':(secminmax['min_x']+xdif-1),'y':(secminmax['min_y']+ydif-1)};
+        var anglist = Array();
+        sectorlist[secnr].forEach(function(linedefnr,key){
+            var v1 = e1m1['vertex'][e1m1['linedef'][linedefnr]['v1']];
+            var v2 = e1m1['vertex'][e1m1['linedef'][linedefnr]['v2']];
+            var rad = Math.atan2((parseFloat(v1['y']) - parseFloat(center['y'])), (parseFloat(v1['x']) - parseFloat(center['x'])));
+            // anglist.splice([e1m1['linedef'][parseInt(linedefnr)]['v1']],0,rad);
+            if (!anglist.hasOwnProperty(e1m1['linedef'][parseInt(linedefnr)]['v1'])) {
+                anglist[e1m1['linedef'][parseInt(linedefnr)]['v1']] = (rad * (180/Math.PI)+360)%360;
+                // anglist[e1m1['linedef'][parseInt(linedefnr)]['v1']] = rad;
+            }
+            rad = Math.atan2((parseFloat(v2['y']) - parseFloat(center['y'])), (parseFloat(v2['x']) - parseFloat(center['x'])));
+            // anglist.splice([e1m1['linedef'][parseInt(linedefnr)]['v2']],0,rad);
+            if (!anglist.hasOwnProperty(e1m1['linedef'][parseInt(linedefnr)]['v2'])) {
+                anglist[e1m1['linedef'][parseInt(linedefnr)]['v2']] = (rad * (180/Math.PI)+360)%360;
+                // anglist[e1m1['linedef'][parseInt(linedefnr)]['v2']] = rad;
+            }
+        });
+        return anglist;
+    }
+
+    function addFloor(sector,secnr){
+        $('#level').append('<div id="sectorfloor'+secnr+'" class="has3d wall"></div>');
+        var secminmax = getMinMaxSectorVals(secnr);
+        var min_x = secminmax['min_x'];
+        var min_y = secminmax['min_y'];
+        var max_x = secminmax['max_x'];
+        var max_y = secminmax['max_y'];
+
+        var xdif = max_x - min_x;
+        var x1perc = xdif / 100;
+        var ydif = max_y - min_y;
+        var y1perc = ydif / 100;
+        var clippath = 'polygon(';
+        //https://en.wikipedia.org/wiki/Curve_orientation#Orientation_of_a_simple_polygon
+        var anglist = ListSectorAngles(secnr);
+        var res = Array();
+
+        //Schleife über sectorlist
+        //
+
+        function findPartner(retarr, vertex){
+            // console.log(sectorlist[secnr])
+            sectorlist[secnr].forEach(function(linedefnr,nombre){
+                var ld = e1m1['linedef'][parseInt(linedefnr)];
+                if(ld['v1'] == vertex){
+                    if(!retarr['verts'].includes(ld['v2'])){
+                        retarr['verts'].push(ld['v2']);
+                        if(!retarr['lds'].includes(linedefnr)){
+                            retarr['lds'].push(linedefnr);
+                        }
+                        retarr = findPartner(retarr,nombre);
+                    }
+                }
+                if(ld['v2'] == vertex){
+                    if(!retarr['verts'].includes(ld['v1'])){
+                        retarr['verts'].push(ld['v1']);
+                        if(!retarr['lds'].includes(linedefnr)){
+                            retarr['lds'].push(linedefnr);
+                        }
+                        retarr = findPartner(retarr,nombre);
+                    }
+                }
+            });
+            return retarr;
+        }
+
+        function findConnectingVertex(usedLDs,vertex){
+            var ldlist = sectorlist[secnr];
+            var result = null;
+            ldlist.forEach(function (val,key){
+                if(!usedLDs.includes(val)){
+                    var ld = e1m1['linedef'][val];
+                    if(ld['v1'] == vertex || ld['v2'] == vertex){
+                        result = val;
+                    }
+                }
+            });
+            return result;
+        }
+
+        var diesersector = sectorlist[secnr];
+        var v1 = e1m1['vertex'][e1m1['linedef'][parseInt(diesersector[0])]['v1']];
+        var v2 = e1m1['vertex'][e1m1['linedef'][parseInt(diesersector[0])]['v2']];
+        clippath += (100-((v1['x']-min_x) / x1perc)) + '% ' + (((v1['y']-min_y) / y1perc)) + '%, ' + (100-((v2['x']-min_x) / x1perc)) + '% ' + (((v2['y']-min_y) / y1perc))+'%';
+        var usedLds = [diesersector[0]];
+        var searchVector = e1m1['linedef'][parseInt(diesersector[0])]['v2'];
+        var nextld = findConnectingVertex(usedLds, searchVector);
+        while (nextld != null) {
+            if(e1m1['linedef'][nextld]['v1'] == searchVector) {
+                var lide = e1m1['vertex'][e1m1['linedef'][parseInt(nextld)]['v2']];
+                clippath += ',' + (100-((lide['x'] - min_x) / x1perc)) + '% ' + (((lide['y'] - min_y) / y1perc)) + '%';
+                searchVector = e1m1['linedef'][parseInt(nextld)]['v2'];
+            }else if(e1m1['linedef'][nextld]['v2'] == searchVector) {
+                var lide = e1m1['vertex'][e1m1['linedef'][parseInt(nextld)]['v1']];
+                clippath += ',' + (100-((lide['x'] - min_x) / x1perc)) + '% ' + (((lide['y'] - min_y) / y1perc)) + '%';
+                searchVector = e1m1['linedef'][parseInt(nextld)]['v1'];
+            }
+            usedLds.push(nextld);
+            nextld = findConnectingVertex(usedLds, searchVector);
+        }
+        clippath += ');';
+
+        var v1 = e1m1['vertex'][e1m1['linedef'][sectorlist[secnr][0]]['v1']];
+        var v2 = e1m1['vertex'][e1m1['linedef'][sectorlist[secnr][0]]['v2']];
+        var rad = Math.atan2((parseFloat(v2['y']) - parseFloat(v1['y'])), (parseFloat(v2['x']) - parseFloat(v1['x'])));
+        var secfloor = sector['heightfloor'];
+        var secceil = sector['heightceiling'];
+        if(sector['texturefloor'] != undefined) {
+            $('#sectorfloor' + secnr).append('<div class="has3d side" style=\'background-image:url("ass/doomtex/' + sector['texturefloor'] + '.png\");background-size:100% 100%; clip-path: '+clippath +
+                ' transform-origin: top; transform: rotateX(90deg) rotateZ(180deg); width: ' + Math.abs((xdif) * scalefactor) + 'em; height:  ' + Math.abs((ydif) * scalefactor) + 'em;\'></div>');
+            $('#sectorfloor' + secnr).css({
+                "transform":
+                    'translateX(' + (min_x * scalefactor) + 'em) translateY(' + -((scalefactor) + (secfloor * scalefactor)) + 'em) translateZ(' + -(min_y * scalefactor) + 'em)',
+                // "clip-path": clippath
+            });
+        }
+        //https://bennettfeely.com/clippy/          translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+((secceil-secfloor)* scalefactor)+(secfloor* scalefactor))+'em) translateZ(' + -(v1['y']*scalefactor) + 'em)'
+    }
+
+
+    function addCeiling(sector,secnr){
+        $('#level').append('<div id="sectorceil'+secnr+'" class="has3d wall"></div>');
+        var secminmax = getMinMaxSectorVals(secnr);
+        var min_x = secminmax['min_x'];
+        var min_y = secminmax['min_y'];
+        var max_x = secminmax['max_x'];
+        var max_y = secminmax['max_y'];
+
+        var xdif = max_x - min_x;
+        var x1perc = xdif / 100;
+        var ydif = max_y - min_y;
+        var y1perc = ydif / 100;
+        var clippath = 'polygon(';
+        //https://en.wikipedia.org/wiki/Curve_orientation#Orientation_of_a_simple_polygon
+        var anglist = ListSectorAngles(secnr);
+        var res = Array();
+
+        function findPartner(retarr, vertex){
+            // console.log(sectorlist[secnr])
+            sectorlist[secnr].forEach(function(linedefnr,nombre){
+                var ld = e1m1['linedef'][parseInt(linedefnr)];
+                if(ld['v1'] == vertex){
+                    if(!retarr['verts'].includes(ld['v2'])){
+                        retarr['verts'].push(ld['v2']);
+                        if(!retarr['lds'].includes(linedefnr)){
+                            retarr['lds'].push(linedefnr);
+                        }
+                        retarr = findPartner(retarr,nombre);
+                    }
+                }
+                if(ld['v2'] == vertex){
+                    if(!retarr['verts'].includes(ld['v1'])){
+                        retarr['verts'].push(ld['v1']);
+                        if(!retarr['lds'].includes(linedefnr)){
+                            retarr['lds'].push(linedefnr);
+                        }
+                        retarr = findPartner(retarr,nombre);
+                    }
+                }
+            });
+            return retarr;
+        }
+
+        function findConnectingVertex(usedLDs,vertex){
+            var ldlist = sectorlist[secnr];
+            var result = null;
+            ldlist.forEach(function (val,key){
+                if(!usedLDs.includes(val)){
+                    var ld = e1m1['linedef'][val];
+                    if(ld['v1'] == vertex || ld['v2'] == vertex){
+                        result = val;
+                    }
+                }
+            });
+            return result;
+        }
+
+        var diesersector = sectorlist[secnr];
+        var v1 = e1m1['vertex'][e1m1['linedef'][parseInt(diesersector[0])]['v1']];
+        var v2 = e1m1['vertex'][e1m1['linedef'][parseInt(diesersector[0])]['v2']];
+        clippath += (100-((v1['x']-min_x) / x1perc)) + '% ' + (100-((v1['y']-min_y) / y1perc)) + '%, ' + (100-((v2['x']-min_x) / x1perc)) + '% ' + (100-((v2['y']-min_y) / y1perc))+'%';
+        var usedLds = [diesersector[0]];
+        var searchVector = e1m1['linedef'][parseInt(diesersector[0])]['v2'];
+        var nextld = findConnectingVertex(usedLds, searchVector);
+        while (nextld != null) {
+            if(e1m1['linedef'][nextld]['v1'] == searchVector) {
+                var lide = e1m1['vertex'][e1m1['linedef'][parseInt(nextld)]['v2']];
+                clippath += ',' + (100-((lide['x'] - min_x) / x1perc)) + '% ' + (100-((lide['y'] - min_y) / y1perc)) + '%';
+                searchVector = e1m1['linedef'][parseInt(nextld)]['v2'];
+            }else if(e1m1['linedef'][nextld]['v2'] == searchVector) {
+                var lide = e1m1['vertex'][e1m1['linedef'][parseInt(nextld)]['v1']];
+                clippath += ',' + (100-((lide['x'] - min_x) / x1perc)) + '% ' + (100-((lide['y'] - min_y) / y1perc)) + '%';
+                searchVector = e1m1['linedef'][parseInt(nextld)]['v1'];
+            }
+            usedLds.push(nextld);
+            nextld = findConnectingVertex(usedLds, searchVector);
+        }
+        clippath += ');';
+
+        var v1 = e1m1['vertex'][e1m1['linedef'][sectorlist[secnr][0]]['v1']];
+        var v2 = e1m1['vertex'][e1m1['linedef'][sectorlist[secnr][0]]['v2']];
+        var rad = Math.atan2((parseFloat(v2['y']) - parseFloat(v1['y'])), (parseFloat(v2['x']) - parseFloat(v1['x'])));
+        var secfloor = sector['heightfloor'];
+        var secceil = sector['heightceiling'];
+        if(sector['textureceiling'] != undefined) {
+            if(sector['textureceiling'].indexOf('F_SKY')===0){
+                $('.wrapper').width(window.innerWidth).height(window.innerHeight).css({
+                    'perspective':perspective,
+                    'background-image': 'url("ass/doomtex/'+sector['textureceiling'].replace('F_','')+'.png")',
+                    'background-size': '100% 100%'
+                });
+            }else {
+                $('#sectorceil' + secnr).append('<div class="has3d side" style=\'background-image:url("ass/doomtex/' + sector['textureceiling'] + '.png\");background-size:100% 100%; clip-path: ' + clippath +
+                    ' transform-origin: top; transform: rotateX(-90deg) rotateZ(180deg) translateY(' + (-((ydif) * scalefactor) + "em") + '); width: ' + Math.abs((xdif) * scalefactor) + 'em; height:  ' + Math.abs((ydif) * scalefactor) + 'em;\'></div>');
+                $('#sectorceil' + secnr).css({
+                    "transform":
+                        'translateX(' + (min_x * scalefactor) + 'em) translateY(' + -((scalefactor) + (secceil * scalefactor)) + 'em) translateZ(' + -(min_y * scalefactor) + 'em)',
+                    // "clip-path": clippath
+                });
+            }
+        }
+        //https://bennettfeely.com/clippy/          translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+((secceil-secfloor)* scalefactor)+(secfloor* scalefactor))+'em) translateZ(' + -(v1['y']*scalefactor) + 'em)'
+    }
+
+    function addPlane(linedef,linedefnumber){
+        $('#level').append('<div id="linedef'+linedefnumber+'" class="has3d wall">'+linedef["blocking"]+'</div>');
+        //sector['edges'].forEach(function (edge) {
+        var sidedef = e1m1['sidedef'][linedef['sidefront']]['sector'];
+        var sidedefb = 0;
+        if(linedef['sideback'] != 65535) {
+            sidedefb = e1m1['sidedef'][linedef['sideback']]['sector'];
+        }
+            var canvas = document.getElementById("minimap");
+            var ctx = canvas.getContext("2d");//e1m1['linedef']
+            var v1 = e1m1['vertex'][linedef['v1']];
+            var v2 = e1m1['vertex'][linedef['v2']];
+            // console.log(sidedef)
+        //if(sidedef == 7 || sidedefb == 7) {
+            ctx.moveTo((v1['x'] * 0.07) + minimapadjustval, -(v1['y'] * 0.07)-minimapadjustval);
+            ctx.lineTo((v2['x'] * 0.07) + minimapadjustval, -(v2['y'] * 0.07)-minimapadjustval);
+            ctx.stroke();   //Minimap Ende
+        //}
+            var distance = Math.sqrt(Math.pow((v2['x'] - v1['x']), 2) + Math.pow((v2['y'] - v1['y']), 2));
+            distance = distance * scalefactor;
+            var rad = Math.atan2((v2['y'] - v1['y']), (v2['x'] - v1['x']));
+            // if(isNaN(sector['floor_height']*scalefactor) || isNaN(rad) || isNaN(distance) || isNaN(edge['y0']*scalefactor) || isNaN(edge['x0']*scalefactor)){
+            //     console.log(linedefnumber);
+            // }
+            // if(edge['tex']['l']['n']=="" || edge['tex']['l']['n']=="-"){
+            //     console.log("nope"+linedefnumber);
+            // }
+            // if(edge['dest']!=0){
+            //     console.log(edge['dest']);
+            // }
+
+        // $('#linedef' + linedefnumber).append('<div class="has3d plane side" style="width: ' + distance + 'em; height: '+((secceil-secfloor)* scalefactor)+'em; transform: translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+secfloor)+'em) translateZ(' + (v1['y']*scalefactor) + 'em) rotateY(' + -rad + 'rad)"></div>');
+
+        // $('#linedef' + linedefnumber).append('<div class="has3d plane side" style="width: ' + distance + 'em; height: 20em; transform: translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+0)+'em) translateZ(' + (v1['y']*scalefactor) + 'em) rotateY(' + -rad + 'rad)"></div>');
+
+        function findVectorBro(v1,v2){
+            var result = null;
+            e1m1['linedef'].forEach(function(value,key){
+                if(((value['v1'] == v1 && value['v2'] == v2) || (value['v1'] == v2 && value['v2'] == v1))){
+                    result = key;
+                }
+            });
+            return result;
+        }
+
+        function findNeighbouringSector(v1,v2){
+            var vec1 = new PointF(e1m1['vertex'][v1]['x'],e1m1['vertex'][v1]['y']);
+            var vec2 = new PointF(e1m1['vertex'][v2]['x'],e1m1['vertex'][v2]['y']);
+            var result = null;
+            var frontsector = e1m1['sidedef'][linedef['sidefront']]['sector'];
+            e1m1['linedef'].forEach(function(value,key){
+                if(frontsector != e1m1['sidedef'][value['sidefront']]['sector']){
+                    var searchvec1 = new PointF(e1m1['vertex'][value['v1']]['x'],e1m1['vertex'][value['v1']]['y']);
+                    var searchvec2 = new PointF(e1m1['vertex'][value['v2']]['x'],e1m1['vertex'][value['v2']]['y']);
+                    /* if(e1m1['vertex'][value['v1']]['x'] == 320.0 && e1m1['vertex'][value['v1']]['y'] == -3136.0 && e1m1['vertex'][value['v2']]['x'] == 320.0 && e1m1['vertex'][value['v2']]['y'] == -3072.0){  //LD138 der Balken im Nebenraum ohne Textur oben unten
+                        console.log(searchvec1, searchvec2);
+                    } */
+                    if(MyMathOP.Punkt_auf_Linie(searchvec1,vec1,vec2) || MyMathOP.Punkt_auf_Linie(searchvec2,vec1,vec2) || MyMathOP.Punkt_auf_Linie(vec1,searchvec1,searchvec2) || MyMathOP.Punkt_auf_Linie(vec2,searchvec1,searchvec2)){
+                        result = e1m1['sidedef'][value['sidefront']]['sector'];
+                    }
+                }
+            });
+            return result;
+        }
+
+        if(linedef['sidefront'] != 65535){  // 65535 = no sidedef;
+            var sidedef = e1m1['sidedef'][linedef['sidefront']];
+            var sector = e1m1['sector'][sidedef['sector']];
+            var secfloor = sector['heightfloor'];
+            var secceil = sector['heightceiling'];
+            var texture = "";
+            if(sidedef['texturemiddle'] != undefined){
+                texture = 'background-image:url("ass/doomtex/'+sidedef['texturemiddle']+'.png\");';
+            }
+            $('#linedef' + linedefnumber).append('<div class="has3d plane side" id="ldcont'+linedefnumber+'" style=\''+texture+'background-size:100% 100%;' +
+                'width: ' + distance + 'em; height: '+((secceil-secfloor)* scalefactor)+'em; transform: rotateY(' + rad + 'rad)\'></div>');
+            $('#linedef' + linedefnumber).css('transform', 'translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+((secceil-secfloor)* scalefactor)+(secfloor* scalefactor))+'em) translateZ(' + -(v1['y']*scalefactor) + 'em)');
+            if(sidedef['texturetop'] != undefined){
+                var neighborsector = findNeighbouringSector(linedef['v1'],linedef['v2']);
+                if(neighborsector != null) {
+                    texture = 'background-image:url("ass/doomtex/' + sidedef['texturetop'] + '.png\");';
+                    var topdiv = '<div id="ldtop' + linedefnumber + '" class="has3d wall" style=\'' + texture + 'background-size:100% 100%;' +
+                        'width: 100%; height: ' + ((secceil - (e1m1['sector'][neighborsector]['heightceiling'])) * scalefactor) + 'em;\'></div>';
+                    $('#ldcont' + linedefnumber).append(topdiv);
+                }else{
+                    console.log(linedefnumber + " keinen Nachbar gefunden [top]");
+                }
+            }
+            if(sidedef['texturebottom'] != undefined){
+                var neighborsector = findNeighbouringSector(linedef['v1'],linedef['v2']);
+                if(neighborsector != null) {
+                    texture = 'background-image:url("ass/doomtex/' + sidedef['texturebottom'] + '.png\");';
+                    var topdiv = '<div id="ldbottom' + linedefnumber + '" class="has3d wall" style=\'' + texture + 'background-size:100% 100%;' +
+                        'width: 100%; height: ' + (((e1m1['sector'][neighborsector]['heightfloor'])-secfloor) * scalefactor) + 'em;bottom:0em;\'></div>';
+                    $('#ldcont' + linedefnumber).append(topdiv);
+                }else{
+                    console.log(linedefnumber + " keinen Nachbar gefunden [bottom]");
+                    console.log("V1",e1m1['vertex'][linedef['v1']]['x'],e1m1['vertex'][linedef['v1']]['y'],"V2",e1m1['vertex'][linedef['v2']]['x'],e1m1['vertex'][linedef['v2']]['y']);
+                }
+            }
+        }
+        // if(linedef['sideback'] != 65535){  // 65535 = no sidedef;
+        //     var rad2 = Math.atan2((v1['y'] - v2['y']), (v1['x'] - v2['x']));
+        //     var sidedef = e1m1['sidedef'][linedef['sideback']];
+        //     var sector = e1m1['sector'][sidedef['sector']];
+        //     var secfloor = sector['heightfloor'];
+        //     var secceil = sector['heightceiling'];
+        //     $('#linedef' + linedefnumber).append('<div class="has3d plane side" style=\'background-image:url("ass/doomtex/'+sidedef['texturemiddle']+'.png\");background-size:100% 100%;' +
+        //         'width: ' + distance + 'em; height: '+((secceil-secfloor)* scalefactor)+'em; transform: rotateY(' + rad2 + 'rad)\'></div>');
+        //     $('#linedef' + linedefnumber).css('transform', 'translateX(' + (v2['x']*scalefactor) + 'em) translateY('+-((scalefactor)+((secceil-secfloor)* scalefactor)+(secfloor* scalefactor))+'em) translateZ(' + -(v2['y']*scalefactor) + 'em)');
+        //
+        // }
+        // $('#linedef' + linedefnumber).append('<div class="has3d plane side" style="width: ' + distance + 'em; height: 20em; transform: translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+20)+'em) translateZ(' + (v1['y']*scalefactor) + 'em) rotateY(' + -rad + 'rad)"></div>');
+        // });
+    }
+
+    function drawPlayerPositionOnMap(){
+        var canvas = document.getElementById("minimapplayerlayer");
+        var ctx = canvas.getContext("2d");
+
+
+        ctx.clearRect(0, 0, 350, 350); // clear canvas
+        ctx.beginPath();
+        ctx.arc((-player.pos.x*0.3),(player.pos.z*0.3), 2, 0, 2 * Math.PI, false);
+        console.log("X: "+(-player.pos.x*0.3)+"; Y: " + (player.pos.z*0.3));
+        ctx.fillStyle = 'green';
+        ctx.fill();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = '#00FF00';
+        ctx.stroke();
+    }
+
+    (function gameloop() {
+        if (forward){
+            if(speed<1)
+                speed += .1;
+            //player.camerarot.x = 0;
+        }
+        if (backward){
+            if(speed>-1)
+                speed -= .1;
+            //player.camerarot.x = 0;
+        }
+        slowdown();
+        applySpeed();
+        setTransform();
+        window.requestAnimationFrame(drawPlayerPositionOnMap);
+        setTimeout( gameloop, 15);
+    })();
+</script>
+
+
+</body>
+</html>
