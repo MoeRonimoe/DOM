@@ -184,6 +184,17 @@
                 mask-position: 100% 0;
             }
         }
+
+         #debuginfo {
+             position: fixed;
+             top: 0;
+             right: 0;
+             background-color: lightblue;
+             padding: 10px;
+             z-index: 1000;
+             font-family: Arial, sans-serif;
+             border: 1px solid #ccc;
+         }
     </style>
 </head>
 <body translate="no">
@@ -221,6 +232,7 @@
     <canvas id="minimapplayerlayer" width="350" height="300" style="border:1px solid #d3d3d3; display: block; position: absolute; z-index: 2;">
         Your browser does not support the canvas element.
     </canvas>
+    <div id="debuginfo"></div>
 </div>
 <script src="js/Mth.js"></script>
 <script>
@@ -261,6 +273,20 @@
         perspective = (Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)))/2;
         $('.wrapper').width(window.innerWidth).height(window.innerHeight).css('perspective',perspective);
     });
+
+    // Dynamisches Objekt
+    const debugdata = {
+    };
+
+    function updateDebugInfo() {
+        // Dynamisches Einfügen der Werte
+        const debuginfo = document.getElementById("debuginfo");
+        debuginfo.innerHTML = `
+            <p>FPS: ${debugdata.fps}</p>
+            <p>Minimap x: ${debugdata.playx}</p>
+            <p>Minimap z: ${debugdata.playz}</p>
+        `;
+    }
 
     $(document).ready(function () {
         $('#titlescreen').on('click touch', function (){
@@ -677,6 +703,8 @@
         //if(sidedef == 7 || sidedefb == 7) {
             ctx.moveTo((v1['x'] * 0.07) + minimapadjustval, -(v1['y'] * 0.07)-minimapadjustval);
             ctx.lineTo((v2['x'] * 0.07) + minimapadjustval, -(v2['y'] * 0.07)-minimapadjustval);
+        //     ctx.moveTo((v1['x'] * 0.07), -(v1['y'] * 0.07));
+        //     ctx.lineTo((v2['x'] * 0.07), -(v2['y'] * 0.07));
             ctx.stroke();   //Minimap Ende
         //}
             var distance = Math.sqrt(Math.pow((v2['x'] - v1['x']), 2) + Math.pow((v2['y'] - v1['y']), 2));
@@ -781,11 +809,18 @@
         var canvas = document.getElementById("minimapplayerlayer");
         var ctx = canvas.getContext("2d");
 
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        ctx.clearRect(0, 0, 350, 350); // clear canvas
         ctx.beginPath();
-        ctx.arc((-player.pos.x*0.3),(player.pos.z*0.3), 2, 0, 2 * Math.PI, false);
-        console.log("X: "+(-player.pos.x*0.3)+"; Y: " + (player.pos.z*0.3));
+        var mmscaleFactor = 0.07; // Verwenden Sie denselben Skalierungsfaktor für beide Canvas
+        var playx = (-player.pos.x * 5 * mmscaleFactor)+minimapadjustval;   //5 um das 0.2 scalefaktor umzukehren und die richtigen Ursprungscoords für die Berechnung zu verwenden
+        var playz = (player.pos.z * 5 * mmscaleFactor)-minimapadjustval;
+        debugdata.playx = playx;
+        debugdata.playz = playz;
+        ctx.arc(playx, playz, 2, 0, 2 * Math.PI, false);
+        // ctx.fillRect(50, 50, 10, 10); // Ein kleines Quadrat an einer festen Position
+
+        console.log("X: "+playx+"; Y: " + playz);
         ctx.fillStyle = 'green';
         ctx.fill();
         ctx.lineWidth = 5;
@@ -793,7 +828,19 @@
         ctx.stroke();
     }
 
+    var lastTime = 0; // Zeitstempel des letzten Frames
+    var fps = 0; // Aktuelle FPS
+
     (function gameloop() {
+        // Zeitdifferenz zwischen diesem und dem letzten Frame berechnen
+        var currentTime = Date.now();
+        const deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+
+        // FPS berechnen: 1 Sekunde (1000 ms) geteilt durch Delta-Time
+        fps = 1000 / deltaTime;
+        debugdata.fps = fps.toFixed(2);
+
         if (forward){
             if(speed<1)
                 speed += .1;
@@ -804,6 +851,7 @@
                 speed -= .1;
             //player.camerarot.x = 0;
         }
+        updateDebugInfo();
         slowdown();
         applySpeed();
         setTransform();
