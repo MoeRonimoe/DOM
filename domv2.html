@@ -5,197 +5,8 @@
     <meta charset="UTF-8">
     <title>DOM</title>
     <script src="js/jquery-3.5.1.min.js"></script>
-    <style>
-        .wrapper {
-            width: 100%;
-            height: 100%;
-            float: left;
-            overflow: hidden;
-        }
-
-        .w1 {
-            perspective: 1000px;
-        }
-
-        .wrapper h1 {
-            text-align: center;
-        }
-
-        .wall {
-            position: absolute;
-            /*font-size: 4em;*/
-            /*width: 80em;*/
-            margin: 0em auto;
-
-        }
-
-        .level {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate3d(-211.5em, -10em, -730em);
-            margin-top: 220px;
-        }
-        #camera{
-            position: absolute;
-            top:50%;
-            left: 50%;
-            transform: translate3d(0em, 0em, 1000px) rotateX(0deg) rotateY(180deg) rotateZ(0deg);
-            -webkit-touch-callout: none;                /* prevent callout to copy image, etc when tap to hold */
-            -webkit-user-select: none;                  /* prevent copy paste, to allow, change 'none' to 'text' */
-        }
-        .has3d{
-            transform-style: preserve-3d;
-        }
-
-        .side {
-            position: absolute;
-            /*width: 2em;*/
-            /*height: 0.5em;*/
-            /*background: rgba(215, 186, 180, 0.6);*/
-            border: 1px solid rgba(0, 0, 0, 1);
-            color: white;
-            text-align: center;
-            /*line-height: 2em;*/
-            backface-visibility: hidden;
-            image-rendering: -moz-crisp-edges; /* Firefox */
-            image-rendering: -o-crisp-edges; /* Opera */
-            image-rendering: -webkit-optimize-contrast;/* Webkit (non-standard naming) */
-            image-rendering: crisp-edges;
-            -ms-interpolation-mode: nearest-neighbor; /* IE (non-standard property) */
-        }
-        .plane{
-            transform-origin: left;
-        }
-
-        #playershadow{
-            width: 5em;
-            height: 5em;
-            transform: rotateX(90deg) translateZ(70em);
-            background-color: rgba(0, 0, 0, 0.4);
-            position: absolute;
-            border-radius: 50%;
-        }
-
-        @media only screen and (min-width: 768px) and (max-width: 1024px) {
-            #mobilecontrols{
-                display: block !important;
-                z-index: 100;
-                position: absolute;
-                bottom: 0;
-                left: 50%;
-                transform: translateX(-50%);
-            }
-        }
-        #mobilecontrols{
-            display: none;
-            touch-action: none;
-        }
-        .triangle.forward{
-            width: 0;
-            height: 0;
-            border-width: 0 100px 80px 100px;
-            border-color: transparent transparent #FFFFFF55 transparent;
-            border-style: solid;
-            filter: drop-shadow(4px 6px 8px #000000);
-        }
-        .triangle.backward{
-            width: 0;
-            height: 0;
-            border-width: 80px 100px 0 100px;
-            border-color: #FFFFFF55 transparent transparent transparent;
-            border-style: solid;
-            filter: drop-shadow(4px 6px 8px #000000);
-        }
-        #titlescreen{
-            position: absolute;
-            z-index: 100;
-            width: 100vw;
-            height: 100vh;
-            background-color: black;
-            opacity: 1;
-            -webkit-mask: url("https://raw.githubusercontent.com/robin-dela/css-mask-animation/master/img/nature-sprite.png");
-            mask: url("https://raw.githubusercontent.com/robin-dela/css-mask-animation/master/img/nature-sprite.png");
-            -webkit-mask-size: 2300% 100%;
-            mask-size: 2300% 100%;
-            border: none;
-            color: #fff;
-        }
-        .titlemelt{
-            -webkit-animation: ani 0.7s steps(22) forwards;
-            animation: ani 0.7s steps(22) forwards;
-            opacity: 0;
-        }
-        .titleimg{
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            height: 100%;
-            position: sticky;
-            z-index: 666;
-        }
-        body {
-            margin-left: 0;
-            margin-top: -20px;
-        }
-
-        .slide__bg {
-            position: absolute;
-            z-index: 99;
-            top: 50%;
-            left: 50%;
-            -webkit-transform: translate(-50%, -50%) scale(2);
-            transform: translate(-50%, -50%) scale(2);
-            -webkit-filter: blur(50px);
-            filter: blur(50px);
-            /*opacity: 0;*/
-            -webkit-transition: opacity 1s ease;
-            transition: opacity 1s ease;
-            will-change: opacity;
-        }
-        .titletext{
-            color: white;
-            z-index: 666;
-            position: absolute;
-            bottom: 50%;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 5em;
-            pointer-events: none;
-            text-align: center;
-        }
-        @-webkit-keyframes ani {
-            from {
-                -webkit-mask-position: 0 0;
-                mask-position: 0 0;
-            }
-            to {
-                -webkit-mask-position: 100% 0;
-                mask-position: 100% 0;
-            }
-        }
-        @keyframes ani {
-            from {
-                -webkit-mask-position: 0 0;
-                mask-position: 0 0;
-            }
-            to {
-                -webkit-mask-position: 100% 0;
-                mask-position: 100% 0;
-            }
-        }
-
-         #debuginfo {
-             position: fixed;
-             top: 0;
-             right: 0;
-             background-color: lightblue;
-             padding: 10px;
-             z-index: 1000;
-             font-family: Arial, sans-serif;
-             border: 1px solid #ccc;
-         }
-    </style>
+    <script src="js/loadwad.js"></script>
+    <link rel="stylesheet" href="css/dom.css">
 </head>
 <body translate="no">
 <svg class="slider__mask" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -209,13 +20,32 @@
 </svg>
 <div id="wrapper" class="wrapper w1">
     <div id="titlescreen">
-        <svg class="slide__bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"
-             xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1920" height="1080">
-            <rect x="0" y="0" width="1920" height="1080" fill="url(#bg1)"/>
+        <svg class="slide__bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="1920" height="1080" fill="url(#bg1)"></rect>
         </svg>
         <img src="ass/dom.png" class="titleimg">
-        <code class="titletext">CLICK TO START</code>
+        <div class="menu">
+            <div class="menu-item" id="start_demo">START E1M1 DEMO</div>
+            <div class="menu-item" onclick="toggleMenu('menu2')">LOAD WAD</div>
+            <div id="menu2" class="expand-menu">
+                <div class="menu-content">
+                    <input type="file" id="fileInput" onchange="handleFile()">
+                    <div id="loaded_levels">
+
+                    </div>
+                </div>
+            </div>
+            <div class="menu-item" onclick="toggleMenu('menu3')">Option 3</div>
+            <div id="menu3" class="expand-menu">
+                <div class="menu-content">Inhalt für Option 3</div>
+            </div>
+            <div class="menu-item" onclick="toggleMenu('menu4')">Option 4</div>
+            <div id="menu4" class="expand-menu">
+                <div class="menu-content">Inhalt für Option 4</div>
+            </div>
+        </div>
     </div>
+
     <div id="camera" class="has3d">
         <div id="level" class="level has3d">
             <div id="playershadow"></div>
@@ -236,13 +66,28 @@
 </div>
 <script src="js/Mth.js"></script>
 <script>
+    function toggleMenu(menuId) {
+        const menu = document.getElementById(menuId);
+        const isVisible = menu.style.display === 'block';
+
+        // Alle expandierten Menüs schließen
+        document.querySelectorAll('.expand-menu').forEach((expand) => {
+            expand.style.display = 'none';
+        });
+
+        // Nur das angeklickte Menü öffnen/schließen
+        if (!isVisible) {
+            menu.style.display = 'block';
+        }
+    }
+
     document.onkeydown = checkKey;
     document.onkeyup = stopMovement;
     var forward = false;
     var backward = false;
     const player = {
         camerarot: new position(0,0,0),
-        pos: new position(-211.5, 12.5, 730),
+        pos: new position(0, 12.5, 0),
         shadowcenter: function() {
             return new position(-this.pos.x-2.5, this.pos.z, -this.pos.y);
         },
@@ -250,6 +95,7 @@
             return getPlayerBoundingBox({a: this.pos,});
         },
     };
+    var sector_area = [];
     var minimapadjustval = 70;
     document.getElementById('mobileforward').ontouchstart = function (e) {
         forward = true;
@@ -264,9 +110,17 @@
         backward = false;
     }
     var rooms = [];
+    var bspTree;
+    var visibleArea = {
+        "top": 0,
+        "bottom": 0,
+        "left": 0,
+        "right": 0
+    };
     var sectorlist = [];
     var scalefactor = 0.2;
     var e1m1 = "";
+    var current_sector = 0;
     var perspective = (Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)))/2;
 
     $( window ).resize(function() {
@@ -285,43 +139,80 @@
             <p>FPS: ${debugdata.fps}</p>
             <p>Minimap x: ${debugdata.playx}</p>
             <p>Minimap z: ${debugdata.playz}</p>
+            <p>Player x: ${debugdata.playerx}</p>
+            <p>Player z: ${debugdata.playerz}</p>
+            <p>Current Sector: ${debugdata.sector}</p>
         `;
     }
 
     $(document).ready(function () {
-        $('#titlescreen').on('click touch', function (){
-            $(this).addClass("titlemelt").delay(2000).hide(0);
+        $('#start_demo').on('click touch', function (){
+            $.getJSON('ass/e1m1_dyn.json', function(data) {
+                loadLevel(data.E1M1).then((result) => {
+                    $('#titlescreen').addClass("titlemelt").delay(2000).hide(0);
+                }).catch((error) => {
+                    console.error(error); // Falls ein Fehler auftritt
+                });
+            });
         });
         perspective = (Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)))/2;
 
         var element = document.querySelectorAll(".door");
-        $.getJSON('ass/e1m1_hangar.json', function(data) {
-            e1m1 = data;
-            e1m1['linedef'].forEach(function (linedef,key){
-                addPlane(linedef,key);
-                if(linedef['sidefront'] != 65535){
-                    if(Array.isArray(sectorlist[e1m1['sidedef'][linedef['sidefront']]['sector']])){
-                        sectorlist[e1m1['sidedef'][linedef['sidefront']]['sector']].push(key);
-                    }else{
-                        sectorlist[e1m1['sidedef'][linedef['sidefront']]['sector']] = [];
-                        sectorlist[e1m1['sidedef'][linedef['sidefront']]['sector']].push(key);
-                    }
-                }
-                if(linedef['sideback'] != 65535){
-                    if(Array.isArray(sectorlist[e1m1['sidedef'][linedef['sideback']]['sector']])){
-                        sectorlist[e1m1['sidedef'][linedef['sideback']]['sector']].push(key);
-                    }else{
-                        sectorlist[e1m1['sidedef'][linedef['sideback']]['sector']] = [];
-                        sectorlist[e1m1['sidedef'][linedef['sideback']]['sector']].push(key);
-                    }
-                }
-            });
-            e1m1['sector'].forEach(function(sector,key){
-                addFloor(sector,key);
-                addCeiling(sector,key);
-            });
-        });
     });
+
+    function loadLevel(leveldata){
+        return new Promise((resolve, reject) => {
+            e1m1 = leveldata;
+            e1m1['LINEDEFS'].forEach(function (single_linedef, key) {
+                addPlane(single_linedef, key);
+                if (single_linedef['sidefront'] != 65535) {
+                    if (Array.isArray(sectorlist[e1m1['SIDEDEFS'][single_linedef['sidefront']]['sector']])) {
+                        sectorlist[e1m1['SIDEDEFS'][single_linedef['sidefront']]['sector']].push(key);
+                    } else {
+                        sectorlist[e1m1['SIDEDEFS'][single_linedef['sidefront']]['sector']] = [];
+                        sectorlist[e1m1['SIDEDEFS'][single_linedef['sidefront']]['sector']].push(key);
+                    }
+                }
+                if (single_linedef['sideback'] != 65535) {
+                    if (Array.isArray(sectorlist[e1m1['SIDEDEFS'][single_linedef['sideback']]['sector']])) {
+                        sectorlist[e1m1['SIDEDEFS'][single_linedef['sideback']]['sector']].push(key);
+                    } else {
+                        sectorlist[e1m1['SIDEDEFS'][single_linedef['sideback']]['sector']] = [];
+                        sectorlist[e1m1['SIDEDEFS'][single_linedef['sideback']]['sector']].push(key);
+                    }
+                }
+            });
+            e1m1['SECTORS'].forEach(function (sector, key) {
+                addFloor(sector, key);
+                addCeiling(sector, key);
+            });
+            e1m1['THINGS'].forEach(function (thing, key) {
+                if (thing.thingType == 1) {
+                    player.pos.x = -(thing.xPosition * scalefactor);
+                    player.pos.z = -(thing.yPosition * scalefactor);
+                }
+            });
+            //updateTree();
+            resolve();
+        });
+
+    }
+
+    function updateTree(){
+        try {
+            bspTree = buildBspTree(e1m1['NODES']);
+            console.log("BSP-Baum erstellt:", bspTree);
+            visibleArea = findVisibleArea(bspTree, (-(player.pos.x * 5)), (-(player.pos.z*5)));
+            console.log("Sichtbarer Bereich:",
+                "X Min:", visibleArea.left,
+                "X Max:", visibleArea.right,
+                "Y Min:", visibleArea.bottom,
+                "Y Max:", visibleArea.top
+            );
+        } catch (error) {
+            console.error("Fehler beim Erstellen des BSP-Baums:", error.message);
+        }
+    }
     var speed = 0;
 
     function slowdown(){
@@ -411,8 +302,18 @@
     },false);
 
     function setTransform() {
+        var prevsector = current_sector;
+        current_sector = findSector(sector_area, -(player.pos.x), -(player.pos.z));
+        if(prevsector != current_sector){
+            // updateTree();
+        }
+        debugdata.sector = current_sector;
+        if(current_sector && e1m1.SECTORS[current_sector]){
+            player.pos.y = (e1m1.SECTORS[current_sector]['floorHeight'] * scalefactor) - 5;
+        }
+
         $("#camera").get(0).style.setProperty("transform", "translate3d(0em, 0em, "+(perspective)+"px) rotateX(" + player.camerarot.x + "deg) rotateY(" + player.camerarot.y + "deg) rotateZ(" + player.camerarot.z + "deg)");  //Improve Quality:  scale3d(20,20,20)
-        $(".level").get(0).style.setProperty("transform", "translate3d(" + player.pos.x + "em, -5em, " + (-player.pos.z) + "em)");
+        $(".level").get(0).style.setProperty("transform", "translate3d(" + player.pos.x + "em, " + player.pos.y +"em, " + (-player.pos.z) + "em)");
         $('.wrapper').get(0).style.setProperty("background-position-x", -player.camerarot.y * 15 +"px");
         $('.wrapper').get(0).style.setProperty("background-size", "100% "+ (150+player.camerarot.x) + "%");
         if ( $( "#playershadow" ).length ) {
@@ -425,9 +326,9 @@
         var min_y = 100000;
         var max_x = -140000;
         var max_y = -140000;
-        sectorlist[secnr].forEach(function(linedefnr,key){
-            var v1 = e1m1['vertex'][e1m1['linedef'][parseInt(linedefnr)]['v1']];
-            var v2 = e1m1['vertex'][e1m1['linedef'][parseInt(linedefnr)]['v2']];
+        sectorlist[secnr].forEach(function(LINEDEFSnr,key){
+            var v1 = e1m1['VERTEXES'][e1m1['LINEDEFS'][parseInt(LINEDEFSnr)]['startVertex']];
+            var v2 = e1m1['VERTEXES'][e1m1['LINEDEFS'][parseInt(LINEDEFSnr)]['endVertex']];
             //Min
             if(parseFloat(v1['x']) < min_x){
                 min_x = parseFloat(v1['x']);
@@ -455,7 +356,7 @@
                 max_y = parseFloat(v2['y']);
             }
         });
-        return {'min_x':min_x,'max_x':max_x,'min_y':min_y,'max_y':max_y}
+        return {'min_x':min_x,'max_x':max_x,'min_y':min_y,'max_y':max_y, 'height': sectorlist[secnr]['floorHeight']}
     }
 
     function ListSectorAngles(secnr){
@@ -464,20 +365,20 @@
         var ydif = secminmax['max_y'] - secminmax['min_y'];
         var center = {'x':(secminmax['min_x']+xdif-1),'y':(secminmax['min_y']+ydif-1)};
         var anglist = Array();
-        sectorlist[secnr].forEach(function(linedefnr,key){
-            var v1 = e1m1['vertex'][e1m1['linedef'][linedefnr]['v1']];
-            var v2 = e1m1['vertex'][e1m1['linedef'][linedefnr]['v2']];
+        sectorlist[secnr].forEach(function(LINEDEFSnr,key){
+            var v1 = e1m1['VERTEXES'][e1m1['LINEDEFS'][LINEDEFSnr]['startVertex']];
+            var v2 = e1m1['VERTEXES'][e1m1['LINEDEFS'][LINEDEFSnr]['endVertex']];
             var rad = Math.atan2((parseFloat(v1['y']) - parseFloat(center['y'])), (parseFloat(v1['x']) - parseFloat(center['x'])));
-            // anglist.splice([e1m1['linedef'][parseInt(linedefnr)]['v1']],0,rad);
-            if (!anglist.hasOwnProperty(e1m1['linedef'][parseInt(linedefnr)]['v1'])) {
-                anglist[e1m1['linedef'][parseInt(linedefnr)]['v1']] = (rad * (180/Math.PI)+360)%360;
-                // anglist[e1m1['linedef'][parseInt(linedefnr)]['v1']] = rad;
+            // anglist.splice([e1m1['LINEDEFS'][parseInt(LINEDEFSnr)]['startVertex']],0,rad);
+            if (!anglist.hasOwnProperty(e1m1['LINEDEFS'][parseInt(LINEDEFSnr)]['startVertex'])) {
+                anglist[e1m1['LINEDEFS'][parseInt(LINEDEFSnr)]['startVertex']] = (rad * (180/Math.PI)+360)%360;
+                // anglist[e1m1['LINEDEFS'][parseInt(LINEDEFSnr)]['startVertex']] = rad;
             }
             rad = Math.atan2((parseFloat(v2['y']) - parseFloat(center['y'])), (parseFloat(v2['x']) - parseFloat(center['x'])));
-            // anglist.splice([e1m1['linedef'][parseInt(linedefnr)]['v2']],0,rad);
-            if (!anglist.hasOwnProperty(e1m1['linedef'][parseInt(linedefnr)]['v2'])) {
-                anglist[e1m1['linedef'][parseInt(linedefnr)]['v2']] = (rad * (180/Math.PI)+360)%360;
-                // anglist[e1m1['linedef'][parseInt(linedefnr)]['v2']] = rad;
+            // anglist.splice([e1m1['LINEDEFS'][parseInt(LINEDEFSnr)]['endVertex']],0,rad);
+            if (!anglist.hasOwnProperty(e1m1['LINEDEFS'][parseInt(LINEDEFSnr)]['endVertex'])) {
+                anglist[e1m1['LINEDEFS'][parseInt(LINEDEFSnr)]['endVertex']] = (rad * (180/Math.PI)+360)%360;
+                // anglist[e1m1['LINEDEFS'][parseInt(LINEDEFSnr)]['endVertex']] = rad;
             }
         });
         return anglist;
@@ -486,6 +387,7 @@
     function addFloor(sector,secnr){
         $('#level').append('<div id="sectorfloor'+secnr+'" class="has3d wall"></div>');
         var secminmax = getMinMaxSectorVals(secnr);
+        sector_area[secnr] = secminmax;
         var min_x = secminmax['min_x'];
         var min_y = secminmax['min_y'];
         var max_x = secminmax['max_x'];
@@ -503,39 +405,39 @@
         //Schleife über sectorlist
         //
 
-        function findPartner(retarr, vertex){
-            // console.log(sectorlist[secnr])
-            sectorlist[secnr].forEach(function(linedefnr,nombre){
-                var ld = e1m1['linedef'][parseInt(linedefnr)];
-                if(ld['v1'] == vertex){
-                    if(!retarr['verts'].includes(ld['v2'])){
-                        retarr['verts'].push(ld['v2']);
-                        if(!retarr['lds'].includes(linedefnr)){
-                            retarr['lds'].push(linedefnr);
-                        }
-                        retarr = findPartner(retarr,nombre);
-                    }
-                }
-                if(ld['v2'] == vertex){
-                    if(!retarr['verts'].includes(ld['v1'])){
-                        retarr['verts'].push(ld['v1']);
-                        if(!retarr['lds'].includes(linedefnr)){
-                            retarr['lds'].push(linedefnr);
-                        }
-                        retarr = findPartner(retarr,nombre);
-                    }
-                }
-            });
-            return retarr;
-        }
+        // function findPartner(retarr, VERTEXES){
+        //     // console.log(sectorlist[secnr])
+        //     sectorlist[secnr].forEach(function(LINEDEFSnr,nombre){
+        //         var ld = e1m1['LINEDEFS'][parseInt(LINEDEFSnr)];
+        //         if(ld['startVertex'] == VERTEXES){
+        //             if(!retarr['verts'].includes(ld['endVertex'])){
+        //                 retarr['verts'].push(ld['endVertex']);
+        //                 if(!retarr['lds'].includes(LINEDEFSnr)){
+        //                     retarr['lds'].push(LINEDEFSnr);
+        //                 }
+        //                 retarr = findPartner(retarr,nombre);
+        //             }
+        //         }
+        //         if(ld['endVertex'] == VERTEXES){
+        //             if(!retarr['verts'].includes(ld['startVertex'])){
+        //                 retarr['verts'].push(ld['startVertex']);
+        //                 if(!retarr['lds'].includes(LINEDEFSnr)){
+        //                     retarr['lds'].push(LINEDEFSnr);
+        //                 }
+        //                 retarr = findPartner(retarr,nombre);
+        //             }
+        //         }
+        //     });
+        //     return retarr;
+        // }
 
-        function findConnectingVertex(usedLDs,vertex){
+        function findConnectingVERTEXES(usedLDs,VERTEXES){
             var ldlist = sectorlist[secnr];
             var result = null;
             ldlist.forEach(function (val,key){
                 if(!usedLDs.includes(val)){
-                    var ld = e1m1['linedef'][val];
-                    if(ld['v1'] == vertex || ld['v2'] == vertex){
+                    var ld = e1m1['LINEDEFS'][val];
+                    if(ld['startVertex'] == VERTEXES || ld['endVertex'] == VERTEXES){
                         result = val;
                     }
                 }
@@ -544,34 +446,34 @@
         }
 
         var diesersector = sectorlist[secnr];
-        var v1 = e1m1['vertex'][e1m1['linedef'][parseInt(diesersector[0])]['v1']];
-        var v2 = e1m1['vertex'][e1m1['linedef'][parseInt(diesersector[0])]['v2']];
+        var v1 = e1m1['VERTEXES'][e1m1['LINEDEFS'][parseInt(diesersector[0])]['startVertex']];
+        var v2 = e1m1['VERTEXES'][e1m1['LINEDEFS'][parseInt(diesersector[0])]['endVertex']];
         clippath += (100-((v1['x']-min_x) / x1perc)) + '% ' + (((v1['y']-min_y) / y1perc)) + '%, ' + (100-((v2['x']-min_x) / x1perc)) + '% ' + (((v2['y']-min_y) / y1perc))+'%';
         var usedLds = [diesersector[0]];
-        var searchVector = e1m1['linedef'][parseInt(diesersector[0])]['v2'];
-        var nextld = findConnectingVertex(usedLds, searchVector);
+        var searchVector = e1m1['LINEDEFS'][parseInt(diesersector[0])]['endVertex'];
+        var nextld = findConnectingVERTEXES(usedLds, searchVector);
         while (nextld != null) {
-            if(e1m1['linedef'][nextld]['v1'] == searchVector) {
-                var lide = e1m1['vertex'][e1m1['linedef'][parseInt(nextld)]['v2']];
+            if(e1m1['LINEDEFS'][nextld]['startVertex'] == searchVector) {
+                var lide = e1m1['VERTEXES'][e1m1['LINEDEFS'][parseInt(nextld)]['endVertex']];
                 clippath += ',' + (100-((lide['x'] - min_x) / x1perc)) + '% ' + (((lide['y'] - min_y) / y1perc)) + '%';
-                searchVector = e1m1['linedef'][parseInt(nextld)]['v2'];
-            }else if(e1m1['linedef'][nextld]['v2'] == searchVector) {
-                var lide = e1m1['vertex'][e1m1['linedef'][parseInt(nextld)]['v1']];
+                searchVector = e1m1['LINEDEFS'][parseInt(nextld)]['endVertex'];
+            }else if(e1m1['LINEDEFS'][nextld]['endVertex'] == searchVector) {
+                var lide = e1m1['VERTEXES'][e1m1['LINEDEFS'][parseInt(nextld)]['startVertex']];
                 clippath += ',' + (100-((lide['x'] - min_x) / x1perc)) + '% ' + (((lide['y'] - min_y) / y1perc)) + '%';
-                searchVector = e1m1['linedef'][parseInt(nextld)]['v1'];
+                searchVector = e1m1['LINEDEFS'][parseInt(nextld)]['startVertex'];
             }
             usedLds.push(nextld);
-            nextld = findConnectingVertex(usedLds, searchVector);
+            nextld = findConnectingVERTEXES(usedLds, searchVector);
         }
         clippath += ');';
 
-        var v1 = e1m1['vertex'][e1m1['linedef'][sectorlist[secnr][0]]['v1']];
-        var v2 = e1m1['vertex'][e1m1['linedef'][sectorlist[secnr][0]]['v2']];
+        var v1 = e1m1['VERTEXES'][e1m1['LINEDEFS'][sectorlist[secnr][0]]['startVertex']];
+        var v2 = e1m1['VERTEXES'][e1m1['LINEDEFS'][sectorlist[secnr][0]]['endVertex']];
         var rad = Math.atan2((parseFloat(v2['y']) - parseFloat(v1['y'])), (parseFloat(v2['x']) - parseFloat(v1['x'])));
-        var secfloor = sector['heightfloor'];
-        var secceil = sector['heightceiling'];
-        if(sector['texturefloor'] != undefined) {
-            $('#sectorfloor' + secnr).append('<div class="has3d side" style=\'background-image:url("ass/doomtex/' + sector['texturefloor'] + '.png\");background-size:100% 100%; clip-path: '+clippath +
+        var secfloor = sector['floorHeight'];
+        var secceil = sector['ceilingHeight'];
+        if(sector['floorTexture'] != undefined) {
+            $('#sectorfloor' + secnr).append('<div class="has3d side" style=\'background-image:url("ass/doomtex/' + sector['floorTexture'] + '.png\");background-size:100% 100%; clip-path: '+clippath +
                 ' transform-origin: top; transform: rotateX(90deg) rotateZ(180deg); width: ' + Math.abs((xdif) * scalefactor) + 'em; height:  ' + Math.abs((ydif) * scalefactor) + 'em;\'></div>');
             $('#sectorfloor' + secnr).css({
                 "transform":
@@ -600,39 +502,39 @@
         var anglist = ListSectorAngles(secnr);
         var res = Array();
 
-        function findPartner(retarr, vertex){
-            // console.log(sectorlist[secnr])
-            sectorlist[secnr].forEach(function(linedefnr,nombre){
-                var ld = e1m1['linedef'][parseInt(linedefnr)];
-                if(ld['v1'] == vertex){
-                    if(!retarr['verts'].includes(ld['v2'])){
-                        retarr['verts'].push(ld['v2']);
-                        if(!retarr['lds'].includes(linedefnr)){
-                            retarr['lds'].push(linedefnr);
-                        }
-                        retarr = findPartner(retarr,nombre);
-                    }
-                }
-                if(ld['v2'] == vertex){
-                    if(!retarr['verts'].includes(ld['v1'])){
-                        retarr['verts'].push(ld['v1']);
-                        if(!retarr['lds'].includes(linedefnr)){
-                            retarr['lds'].push(linedefnr);
-                        }
-                        retarr = findPartner(retarr,nombre);
-                    }
-                }
-            });
-            return retarr;
-        }
+        // function findPartner(retarr, VERTEXES){
+        //     // console.log(sectorlist[secnr])
+        //     sectorlist[secnr].forEach(function(LINEDEFSnr,nombre){
+        //         var ld = e1m1['LINEDEFS'][parseInt(LINEDEFSnr)];
+        //         if(ld['startVertex'] == VERTEXES){
+        //             if(!retarr['verts'].includes(ld['endVertex'])){
+        //                 retarr['verts'].push(ld['endVertex']);
+        //                 if(!retarr['lds'].includes(LINEDEFSnr)){
+        //                     retarr['lds'].push(LINEDEFSnr);
+        //                 }
+        //                 retarr = findPartner(retarr,nombre);
+        //             }
+        //         }
+        //         if(ld['endVertex'] == VERTEXES){
+        //             if(!retarr['verts'].includes(ld['startVertex'])){
+        //                 retarr['verts'].push(ld['startVertex']);
+        //                 if(!retarr['lds'].includes(LINEDEFSnr)){
+        //                     retarr['lds'].push(LINEDEFSnr);
+        //                 }
+        //                 retarr = findPartner(retarr,nombre);
+        //             }
+        //         }
+        //     });
+        //     return retarr;
+        // }
 
-        function findConnectingVertex(usedLDs,vertex){
+        function findConnectingVERTEXES(usedLDs,VERTEXES){
             var ldlist = sectorlist[secnr];
             var result = null;
             ldlist.forEach(function (val,key){
                 if(!usedLDs.includes(val)){
-                    var ld = e1m1['linedef'][val];
-                    if(ld['v1'] == vertex || ld['v2'] == vertex){
+                    var ld = e1m1['LINEDEFS'][val];
+                    if(ld['startVertex'] == VERTEXES || ld['endVertex'] == VERTEXES){
                         result = val;
                     }
                 }
@@ -641,41 +543,41 @@
         }
 
         var diesersector = sectorlist[secnr];
-        var v1 = e1m1['vertex'][e1m1['linedef'][parseInt(diesersector[0])]['v1']];
-        var v2 = e1m1['vertex'][e1m1['linedef'][parseInt(diesersector[0])]['v2']];
+        var v1 = e1m1['VERTEXES'][e1m1['LINEDEFS'][parseInt(diesersector[0])]['startVertex']];
+        var v2 = e1m1['VERTEXES'][e1m1['LINEDEFS'][parseInt(diesersector[0])]['endVertex']];
         clippath += (100-((v1['x']-min_x) / x1perc)) + '% ' + (100-((v1['y']-min_y) / y1perc)) + '%, ' + (100-((v2['x']-min_x) / x1perc)) + '% ' + (100-((v2['y']-min_y) / y1perc))+'%';
         var usedLds = [diesersector[0]];
-        var searchVector = e1m1['linedef'][parseInt(diesersector[0])]['v2'];
-        var nextld = findConnectingVertex(usedLds, searchVector);
+        var searchVector = e1m1['LINEDEFS'][parseInt(diesersector[0])]['endVertex'];
+        var nextld = findConnectingVERTEXES(usedLds, searchVector);
         while (nextld != null) {
-            if(e1m1['linedef'][nextld]['v1'] == searchVector) {
-                var lide = e1m1['vertex'][e1m1['linedef'][parseInt(nextld)]['v2']];
+            if(e1m1['LINEDEFS'][nextld]['startVertex'] == searchVector) {
+                var lide = e1m1['VERTEXES'][e1m1['LINEDEFS'][parseInt(nextld)]['endVertex']];
                 clippath += ',' + (100-((lide['x'] - min_x) / x1perc)) + '% ' + (100-((lide['y'] - min_y) / y1perc)) + '%';
-                searchVector = e1m1['linedef'][parseInt(nextld)]['v2'];
-            }else if(e1m1['linedef'][nextld]['v2'] == searchVector) {
-                var lide = e1m1['vertex'][e1m1['linedef'][parseInt(nextld)]['v1']];
+                searchVector = e1m1['LINEDEFS'][parseInt(nextld)]['endVertex'];
+            }else if(e1m1['LINEDEFS'][nextld]['endVertex'] == searchVector) {
+                var lide = e1m1['VERTEXES'][e1m1['LINEDEFS'][parseInt(nextld)]['startVertex']];
                 clippath += ',' + (100-((lide['x'] - min_x) / x1perc)) + '% ' + (100-((lide['y'] - min_y) / y1perc)) + '%';
-                searchVector = e1m1['linedef'][parseInt(nextld)]['v1'];
+                searchVector = e1m1['LINEDEFS'][parseInt(nextld)]['startVertex'];
             }
             usedLds.push(nextld);
-            nextld = findConnectingVertex(usedLds, searchVector);
+            nextld = findConnectingVERTEXES(usedLds, searchVector);
         }
         clippath += ');';
 
-        var v1 = e1m1['vertex'][e1m1['linedef'][sectorlist[secnr][0]]['v1']];
-        var v2 = e1m1['vertex'][e1m1['linedef'][sectorlist[secnr][0]]['v2']];
+        var v1 = e1m1['VERTEXES'][e1m1['LINEDEFS'][sectorlist[secnr][0]]['startVertex']];
+        var v2 = e1m1['VERTEXES'][e1m1['LINEDEFS'][sectorlist[secnr][0]]['endVertex']];
         var rad = Math.atan2((parseFloat(v2['y']) - parseFloat(v1['y'])), (parseFloat(v2['x']) - parseFloat(v1['x'])));
-        var secfloor = sector['heightfloor'];
-        var secceil = sector['heightceiling'];
-        if(sector['textureceiling'] != undefined) {
-            if(sector['textureceiling'].indexOf('F_SKY')===0){
+        var secfloor = sector['floorHeight'];
+        var secceil = sector['ceilingHeight'];
+        if(sector['ceilingTexture'] != undefined) {
+            if(sector['ceilingTexture'].indexOf('F_SKY')===0){
                 $('.wrapper').width(window.innerWidth).height(window.innerHeight).css({
                     'perspective':perspective,
-                    'background-image': 'url("ass/doomtex/'+sector['textureceiling'].replace('F_','')+'.png")',
+                    'background-image': 'url("ass/doomtex/'+sector['ceilingTexture'].replace('F_','')+'.png")',
                     'background-size': '100% 100%'
                 });
             }else {
-                $('#sectorceil' + secnr).append('<div class="has3d side" style=\'background-image:url("ass/doomtex/' + sector['textureceiling'] + '.png\");background-size:100% 100%; clip-path: ' + clippath +
+                $('#sectorceil' + secnr).append('<div class="has3d side" style=\'background-image:url("ass/doomtex/' + sector['ceilingTexture'] + '.png\");background-size:100% 100%; clip-path: ' + clippath +
                     ' transform-origin: top; transform: rotateX(-90deg) rotateZ(180deg) translateY(' + (-((ydif) * scalefactor) + "em") + '); width: ' + Math.abs((xdif) * scalefactor) + 'em; height:  ' + Math.abs((ydif) * scalefactor) + 'em;\'></div>');
                 $('#sectorceil' + secnr).css({
                     "transform":
@@ -687,20 +589,20 @@
         //https://bennettfeely.com/clippy/          translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+((secceil-secfloor)* scalefactor)+(secfloor* scalefactor))+'em) translateZ(' + -(v1['y']*scalefactor) + 'em)'
     }
 
-    function addPlane(linedef,linedefnumber){
-        $('#level').append('<div id="linedef'+linedefnumber+'" class="has3d wall">'+linedef["blocking"]+'</div>');
-        //sector['edges'].forEach(function (edge) {
-        var sidedef = e1m1['sidedef'][linedef['sidefront']]['sector'];
-        var sidedefb = 0;
-        if(linedef['sideback'] != 65535) {
-            sidedefb = e1m1['sidedef'][linedef['sideback']]['sector'];
-        }
+    function addPlane(single_linedef,LINEDEFSnumber){
+        $('#level').append('<div id="linedef'+LINEDEFSnumber+'" class="has3d wall"></div>');
+            //sector['edges'].forEach(function (edge) {
+            var SIDEDEFS = e1m1['SIDEDEFS'][single_linedef['sidefront']]['sector'];
+            var SIDEDEFSb = 0;
+            if(single_linedef['sideback'] != 65535) {
+                SIDEDEFSb = e1m1['SIDEDEFS'][single_linedef['sideback']]['sector'];
+            }
             var canvas = document.getElementById("minimap");
-            var ctx = canvas.getContext("2d");//e1m1['linedef']
-            var v1 = e1m1['vertex'][linedef['v1']];
-            var v2 = e1m1['vertex'][linedef['v2']];
-            // console.log(sidedef)
-        //if(sidedef == 7 || sidedefb == 7) {
+            var ctx = canvas.getContext("2d");//e1m1['LINEDEFS']
+            var v1 = e1m1['VERTEXES'][single_linedef['startVertex']];
+            var v2 = e1m1['VERTEXES'][single_linedef['endVertex']];
+            console.log(single_linedef)
+        //if(SIDEDEFS == 7 || SIDEDEFSb == 7) {
             ctx.moveTo((v1['x'] * 0.07) + minimapadjustval, -(v1['y'] * 0.07)-minimapadjustval);
             ctx.lineTo((v2['x'] * 0.07) + minimapadjustval, -(v2['y'] * 0.07)-minimapadjustval);
         //     ctx.moveTo((v1['x'] * 0.07), -(v1['y'] * 0.07));
@@ -711,23 +613,23 @@
             distance = distance * scalefactor;
             var rad = Math.atan2((v2['y'] - v1['y']), (v2['x'] - v1['x']));
             // if(isNaN(sector['floor_height']*scalefactor) || isNaN(rad) || isNaN(distance) || isNaN(edge['y0']*scalefactor) || isNaN(edge['x0']*scalefactor)){
-            //     console.log(linedefnumber);
+            //     console.log(LINEDEFSnumber);
             // }
             // if(edge['tex']['l']['n']=="" || edge['tex']['l']['n']=="-"){
-            //     console.log("nope"+linedefnumber);
+            //     console.log("nope"+LINEDEFSnumber);
             // }
             // if(edge['dest']!=0){
             //     console.log(edge['dest']);
             // }
 
-        // $('#linedef' + linedefnumber).append('<div class="has3d plane side" style="width: ' + distance + 'em; height: '+((secceil-secfloor)* scalefactor)+'em; transform: translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+secfloor)+'em) translateZ(' + (v1['y']*scalefactor) + 'em) rotateY(' + -rad + 'rad)"></div>');
+        // $('#LINEDEFS' + LINEDEFSnumber).append('<div class="has3d plane side" style="width: ' + distance + 'em; height: '+((secceil-secfloor)* scalefactor)+'em; transform: translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+secfloor)+'em) translateZ(' + (v1['y']*scalefactor) + 'em) rotateY(' + -rad + 'rad)"></div>');
 
-        // $('#linedef' + linedefnumber).append('<div class="has3d plane side" style="width: ' + distance + 'em; height: 20em; transform: translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+0)+'em) translateZ(' + (v1['y']*scalefactor) + 'em) rotateY(' + -rad + 'rad)"></div>');
+        // $('#LINEDEFS' + LINEDEFSnumber).append('<div class="has3d plane side" style="width: ' + distance + 'em; height: 20em; transform: translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+0)+'em) translateZ(' + (v1['y']*scalefactor) + 'em) rotateY(' + -rad + 'rad)"></div>');
 
         function findVectorBro(v1,v2){
             var result = null;
-            e1m1['linedef'].forEach(function(value,key){
-                if(((value['v1'] == v1 && value['v2'] == v2) || (value['v1'] == v2 && value['v2'] == v1))){
+            e1m1['LINEDEFS'].forEach(function(value,key){
+                if(((value['startVertex'] == v1 && value['endVertex'] == v2) || (value['startVertex'] == v2 && value['endVertex'] == v1))){
                     result = key;
                 }
             });
@@ -735,74 +637,96 @@
         }
 
         function findNeighbouringSector(v1,v2){
-            var vec1 = new PointF(e1m1['vertex'][v1]['x'],e1m1['vertex'][v1]['y']);
-            var vec2 = new PointF(e1m1['vertex'][v2]['x'],e1m1['vertex'][v2]['y']);
+            var vec1 = new PointF(e1m1['VERTEXES'][v1]['x'],e1m1['VERTEXES'][v1]['y']);
+            var vec2 = new PointF(e1m1['VERTEXES'][v2]['x'],e1m1['VERTEXES'][v2]['y']);
             var result = null;
-            var frontsector = e1m1['sidedef'][linedef['sidefront']]['sector'];
-            e1m1['linedef'].forEach(function(value,key){
-                if(frontsector != e1m1['sidedef'][value['sidefront']]['sector']){
-                    var searchvec1 = new PointF(e1m1['vertex'][value['v1']]['x'],e1m1['vertex'][value['v1']]['y']);
-                    var searchvec2 = new PointF(e1m1['vertex'][value['v2']]['x'],e1m1['vertex'][value['v2']]['y']);
-                    /* if(e1m1['vertex'][value['v1']]['x'] == 320.0 && e1m1['vertex'][value['v1']]['y'] == -3136.0 && e1m1['vertex'][value['v2']]['x'] == 320.0 && e1m1['vertex'][value['v2']]['y'] == -3072.0){  //LD138 der Balken im Nebenraum ohne Textur oben unten
+            var frontsector = e1m1['SIDEDEFS'][single_linedef['sidefront']]['sector'];
+            e1m1['LINEDEFS'].forEach(function(value,key){
+                if(frontsector != e1m1['SIDEDEFS'][value['sidefront']]['sector']){
+                    var searchvec1 = new PointF(e1m1['VERTEXES'][value['startVertex']]['x'],e1m1['VERTEXES'][value['startVertex']]['y']);
+                    var searchvec2 = new PointF(e1m1['VERTEXES'][value['endVertex']]['x'],e1m1['VERTEXES'][value['endVertex']]['y']);
+                    /* if(e1m1['VERTEXES'][value['startVertex']]['x'] == 320.0 && e1m1['VERTEXES'][value['startVertex']]['y'] == -3136.0 && e1m1['VERTEXES'][value['endVertex']]['x'] == 320.0 && e1m1['VERTEXES'][value['endVertex']]['y'] == -3072.0){  //LD138 der Balken im Nebenraum ohne Textur oben unten
                         console.log(searchvec1, searchvec2);
                     } */
                     if(MyMathOP.Punkt_auf_Linie(searchvec1,vec1,vec2) || MyMathOP.Punkt_auf_Linie(searchvec2,vec1,vec2) || MyMathOP.Punkt_auf_Linie(vec1,searchvec1,searchvec2) || MyMathOP.Punkt_auf_Linie(vec2,searchvec1,searchvec2)){
-                        result = e1m1['sidedef'][value['sidefront']]['sector'];
+                        result = e1m1['SIDEDEFS'][value['sidefront']]['sector'];
                     }
                 }
             });
             return result;
         }
 
-        if(linedef['sidefront'] != 65535){  // 65535 = no sidedef;
-            var sidedef = e1m1['sidedef'][linedef['sidefront']];
-            var sector = e1m1['sector'][sidedef['sector']];
-            var secfloor = sector['heightfloor'];
-            var secceil = sector['heightceiling'];
+        if(single_linedef['sidefront'] != 65535){  // 65535 = no SIDEDEFS;
+            var SIDEDEFS = e1m1['SIDEDEFS'][single_linedef['sidefront']];
+            var sector = e1m1['SECTORS'][SIDEDEFS['sector']];
+            var secfloor = sector['floorHeight'];
+            var secceil = sector['ceilingHeight'];
             var texture = "";
-            if(sidedef['texturemiddle'] != undefined){
-                texture = 'background-image:url("ass/doomtex/'+sidedef['texturemiddle']+'.png\");';
+            if(SIDEDEFS['middleTexture'] != undefined){
+                texture = 'background-image:url("ass/doomtex/'+SIDEDEFS['middleTexture']+'.png\");';
             }
-            $('#linedef' + linedefnumber).append('<div class="has3d plane side" id="ldcont'+linedefnumber+'" style=\''+texture+'background-size:100% 100%;' +
+            $('#linedef' + LINEDEFSnumber).append('<div class="has3d plane side" id="ldcont'+LINEDEFSnumber+'" style=\''+texture+'background-size:100% 100%;' +
                 'width: ' + distance + 'em; height: '+((secceil-secfloor)* scalefactor)+'em; transform: rotateY(' + rad + 'rad)\'></div>');
-            $('#linedef' + linedefnumber).css('transform', 'translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+((secceil-secfloor)* scalefactor)+(secfloor* scalefactor))+'em) translateZ(' + -(v1['y']*scalefactor) + 'em)');
-            if(sidedef['texturetop'] != undefined){
-                var neighborsector = findNeighbouringSector(linedef['v1'],linedef['v2']);
+            $('#linedef' + LINEDEFSnumber).css('transform', 'translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+((secceil-secfloor)* scalefactor)+(secfloor* scalefactor))+'em) translateZ(' + -(v1['y']*scalefactor) + 'em)');
+            if(SIDEDEFS['upperTexture'] != undefined){
+                var neighborsector = findNeighbouringSector(single_linedef['startVertex'],single_linedef['endVertex']);
                 if(neighborsector != null) {
-                    texture = 'background-image:url("ass/doomtex/' + sidedef['texturetop'] + '.png\");';
-                    var topdiv = '<div id="ldtop' + linedefnumber + '" class="has3d wall" style=\'' + texture + 'background-size:100% 100%;' +
-                        'width: 100%; height: ' + ((secceil - (e1m1['sector'][neighborsector]['heightceiling'])) * scalefactor) + 'em;\'></div>';
-                    $('#ldcont' + linedefnumber).append(topdiv);
+                    texture = 'background-image:url("ass/doomtex/' + SIDEDEFS['upperTexture'] + '.png\");';
+                    var topdiv = '<div id="ldtop' + LINEDEFSnumber + '" class="has3d wall" style=\'' + texture + 'background-size:100% 100%;' +
+                        'width: 100%; height: ' + ((secceil - (e1m1['SECTORS'][neighborsector]['ceilingHeight'])) * scalefactor) + 'em;\'></div>';
+                    $('#ldcont' + LINEDEFSnumber).append(topdiv);
                 }else{
-                    console.log(linedefnumber + " keinen Nachbar gefunden [top]");
+                    console.log(LINEDEFSnumber + " keinen Nachbar gefunden [top]");
                 }
             }
-            if(sidedef['texturebottom'] != undefined){
-                var neighborsector = findNeighbouringSector(linedef['v1'],linedef['v2']);
+            if(SIDEDEFS['lowerTexture'] != undefined){
+                var neighborsector = findNeighbouringSector(single_linedef['startVertex'],single_linedef['endVertex']);
                 if(neighborsector != null) {
-                    texture = 'background-image:url("ass/doomtex/' + sidedef['texturebottom'] + '.png\");';
-                    var topdiv = '<div id="ldbottom' + linedefnumber + '" class="has3d wall" style=\'' + texture + 'background-size:100% 100%;' +
-                        'width: 100%; height: ' + (((e1m1['sector'][neighborsector]['heightfloor'])-secfloor) * scalefactor) + 'em;bottom:0em;\'></div>';
-                    $('#ldcont' + linedefnumber).append(topdiv);
+                    texture = 'background-image:url("ass/doomtex/' + SIDEDEFS['lowerTexture'] + '.png\");';
+                    var topdiv = '<div id="ldbottom' + LINEDEFSnumber + '" class="has3d wall" style=\'' + texture + 'background-size:100% 100%;' +
+                        'width: 100%; height: ' + (((e1m1['SECTORS'][neighborsector]['floorHeight'])-secfloor) * scalefactor) + 'em;bottom:0em;\'></div>';
+                    $('#ldcont' + LINEDEFSnumber).append(topdiv);
                 }else{
-                    console.log(linedefnumber + " keinen Nachbar gefunden [bottom]");
-                    console.log("V1",e1m1['vertex'][linedef['v1']]['x'],e1m1['vertex'][linedef['v1']]['y'],"V2",e1m1['vertex'][linedef['v2']]['x'],e1m1['vertex'][linedef['v2']]['y']);
+                    console.log(LINEDEFSnumber + " keinen Nachbar gefunden [bottom]");
+                    console.log("V1",e1m1['VERTEXES'][single_linedef['startVertex']]['x'],e1m1['VERTEXES'][single_linedef['startVertex']]['y'],"V2",e1m1['VERTEXES'][single_linedef['endVertex']]['x'],e1m1['VERTEXES'][single_linedef['endVertex']]['y']);
                 }
             }
         }
-        // if(linedef['sideback'] != 65535){  // 65535 = no sidedef;
+        // if(single_linedef['sideback'] != 65535){  // 65535 = no SIDEDEFS;
         //     var rad2 = Math.atan2((v1['y'] - v2['y']), (v1['x'] - v2['x']));
-        //     var sidedef = e1m1['sidedef'][linedef['sideback']];
-        //     var sector = e1m1['sector'][sidedef['sector']];
-        //     var secfloor = sector['heightfloor'];
-        //     var secceil = sector['heightceiling'];
-        //     $('#linedef' + linedefnumber).append('<div class="has3d plane side" style=\'background-image:url("ass/doomtex/'+sidedef['texturemiddle']+'.png\");background-size:100% 100%;' +
+        //     var SIDEDEFS = e1m1['SIDEDEFS'][single_linedef['sideback']];
+        //     var sector = e1m1['SECTORS'][SIDEDEFS['sector']];
+        //     var secfloor = sector['floorHeight'];
+        //     var secceil = sector['ceilingHeight'];
+        //     $('#LINEDEFS' + LINEDEFSnumber).append('<div class="has3d plane side" style=\'background-image:url("ass/doomtex/'+SIDEDEFS['texturemiddle']+'.png\");background-size:100% 100%;' +
         //         'width: ' + distance + 'em; height: '+((secceil-secfloor)* scalefactor)+'em; transform: rotateY(' + rad2 + 'rad)\'></div>');
-        //     $('#linedef' + linedefnumber).css('transform', 'translateX(' + (v2['x']*scalefactor) + 'em) translateY('+-((scalefactor)+((secceil-secfloor)* scalefactor)+(secfloor* scalefactor))+'em) translateZ(' + -(v2['y']*scalefactor) + 'em)');
+        //     $('#LINEDEFS' + LINEDEFSnumber).css('transform', 'translateX(' + (v2['x']*scalefactor) + 'em) translateY('+-((scalefactor)+((secceil-secfloor)* scalefactor)+(secfloor* scalefactor))+'em) translateZ(' + -(v2['y']*scalefactor) + 'em)');
         //
         // }
-        // $('#linedef' + linedefnumber).append('<div class="has3d plane side" style="width: ' + distance + 'em; height: 20em; transform: translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+20)+'em) translateZ(' + (v1['y']*scalefactor) + 'em) rotateY(' + -rad + 'rad)"></div>');
+        // $('#LINEDEFS' + LINEDEFSnumber).append('<div class="has3d plane side" style="width: ' + distance + 'em; height: 20em; transform: translateX(' + (v1['x']*scalefactor) + 'em) translateY('+-((scalefactor)+20)+'em) translateZ(' + (v1['y']*scalefactor) + 'em) rotateY(' + -rad + 'rad)"></div>');
         // });
+    }
+    function findSector(sector_area, x, y) {
+        let bestSector = null; // Speichert den Sektor mit der kleinsten Fläche
+        let minArea = Infinity; // Startwert für die minimale Fläche
+
+        for (let secnr in sector_area) {
+            let sector = sector_area[secnr];
+            if (
+                x >= (sector.min_x * scalefactor) && x <= (sector.max_x * scalefactor) &&
+                y >= (sector.min_y * scalefactor) && y <= (sector.max_y * scalefactor)
+            ) {
+                // Berechnung der Fläche des aktuellen Sektors
+                let area = (sector.max_x - sector.min_x) * (sector.max_y - sector.min_y);
+
+                if (area < minArea) {
+                    minArea = area;
+                    bestSector = secnr;
+                }
+            }
+        }
+
+        return bestSector; // Gibt den Sektor mit der kleinsten Fläche zurück oder null, falls kein Treffer
     }
 
     function drawPlayerPositionOnMap(){
@@ -810,23 +734,170 @@
         var ctx = canvas.getContext("2d");
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+        // console.log("CANVAS WIDTH: ",canvas.width, "CANVAS HEIGHT: ",canvas.height)
         ctx.beginPath();
         var mmscaleFactor = 0.07; // Verwenden Sie denselben Skalierungsfaktor für beide Canvas
         var playx = (-player.pos.x * 5 * mmscaleFactor)+minimapadjustval;   //5 um das 0.2 scalefaktor umzukehren und die richtigen Ursprungscoords für die Berechnung zu verwenden
         var playz = (player.pos.z * 5 * mmscaleFactor)-minimapadjustval;
-        debugdata.playx = playx;
-        debugdata.playz = playz;
-        ctx.arc(playx, playz, 2, 0, 2 * Math.PI, false);
-        // ctx.fillRect(50, 50, 10, 10); // Ein kleines Quadrat an einer festen Position
 
-        console.log("X: "+playx+"; Y: " + playz);
+        // console.log("X: "+playx+"; Y: " + playz);
+        ctx.arc(playx, playz, 2, 0, 2 * Math.PI, false);
         ctx.fillStyle = 'green';
         ctx.fill();
         ctx.lineWidth = 5;
         ctx.strokeStyle = '#00FF00';
         ctx.stroke();
+
+        debugdata.playx = playx;
+        debugdata.playz = playz;
+        debugdata.playerx = player.pos.x;
+        debugdata.playerz = player.pos.z;
+        // var bspx = (visibleArea.left * mmscaleFactor) - minimapadjustval;
+        // var bspy = -(visibleArea.top * mmscaleFactor) + minimapadjustval; // Top für die y-Position verwenden
+        // var bspw = ((visibleArea.right - visibleArea.left) * mmscaleFactor); // Breite zwischen rechter und linker Grenze
+        // var bsph = ((visibleArea.bottom - visibleArea.top) * mmscaleFactor); // Höhe zwischen unterer und oberer Grenzew
+        // ctx.strokeStyle = "blue";
+
+        var bspx = (visibleArea.left * mmscaleFactor) - minimapadjustval;
+        var bspy = (visibleArea.bottom * mmscaleFactor) + minimapadjustval; // Verwende bottom statt top
+        var bspw = ((visibleArea.right - visibleArea.left) * mmscaleFactor); // Breite
+        var bsph = (-(visibleArea.top - visibleArea.bottom) * mmscaleFactor); // Höhe, top - bottom für korrekte Richtung
+        ctx.strokeStyle = "blue";
+        ctx.rect(bspx, -bspy, bspw, bsph); // Zeichne Rechteck basierend auf sichtbarem Bereich
+        ctx.stroke();
+        // console.log("BSP ","X: ",bspx," Y:",bspy," W:",bspw," H:",bsph)
+        // console.log("BSP-Werte:",
+        //     "X Min:", visibleArea.left,
+        //     "X Max:", visibleArea.right,
+        //     "Y Min:", visibleArea.bottom,
+        //     "Y Max:", visibleArea.top,
+        //     "Berechnetes Rechteck: ",
+        //     "X:", bspx,
+        //     "Y:", bspy,
+        //     "Width:", bspw,
+        //     "Height:", bsph
+        // );
+        console.log("BSP ","X: ",bspx," Y:",bspy," W:",bspw," H:",bsph)
+
     }
+
+    class Node {
+        constructor(xPartition, yPartition, changeX, changeY, rightBoundingBox, leftBoundingBox, rightChild, leftChild) {
+            this.xPartition = xPartition;
+            this.yPartition = yPartition;
+            this.changeX = changeX;
+            this.changeY = changeY;
+            this.rightBoundingBox = rightBoundingBox;
+            this.leftBoundingBox = leftBoundingBox;
+            this.rightChild = rightChild;
+            this.leftChild = leftChild;
+        }
+    }
+
+    function buildBspTree(nodes) {
+        if (!Array.isArray(nodes) || nodes.length === 0) {
+            throw new Error("Das 'nodes'-Array ist undefiniert oder leer.");
+        }
+
+        const nodeObjects = nodes.map(node => new Node(
+            node.xPartition,
+            node.yPartition,
+            node.changeX,
+            node.changeY,
+            {
+                top: node.rightBoundingBoxTop,
+                bottom: node.rightBoundingBoxBottom,
+                left: node.rightBoundingBoxLeft,
+                right: node.rightBoundingBoxRight,
+            },
+            {
+                top: node.leftBoundingBoxTop,
+                bottom: node.leftBoundingBoxBottom,
+                left: node.leftBoundingBoxLeft,
+                right: node.leftBoundingBoxRight,
+            },
+            node.rightChild,
+            node.leftChild
+        ));
+
+        // Finde den höchstnummerierten Eintrag (Wurzelknoten)
+        const rootIndex = nodeObjects.length - 1; // Höchste Nummer = letzter Index
+        console.log("rootIndex",rootIndex);
+
+        function constructTree(nodeList, index) {
+            if (index < 0 || index >= nodeList.length) {
+                return null; // Kein Kindknoten vorhanden
+            }
+
+            // Hole den aktuellen Knoten
+            const currentNode = nodeList[index];
+
+            // Rekursiv die Kinder des aktuellen Knotens bauen
+            currentNode.rightChild = currentNode.rightChild >= 0
+                ? constructTree(nodeList, currentNode.rightChild)
+                : null;
+
+            currentNode.leftChild = currentNode.leftChild >= 0
+                ? constructTree(nodeList, currentNode.leftChild)
+                : null;
+
+            return currentNode;
+        }
+        console.log("nodeObjects",nodeObjects);
+
+        return constructTree(nodeObjects, rootIndex); // Der höchstnummerierte Eintrag ist die Wurzel
+    }
+
+    function findVisibleAreaOld(node, playerX, playerY) {
+        if (!node) {
+            return null; // Kein sichtbarer Bereich, Ende des Baumes erreicht
+        }
+
+        // Berechnung der Position relativ zur Trennlinie (xPartition und yPartition)
+        const side = (playerX - node.xPartition) * node.changeY - (playerY - node.yPartition) * node.changeX;
+
+        if (side >= 0) {
+            // Spieler befindet sich auf der rechten Seite
+            if (node.rightChild) {
+                return findVisibleArea(node.rightChild, playerX, playerY); // Weiter nach rechts
+            } else {
+                return node.rightBoundingBox; // Kein rechter Kindknoten - gib rechte Bounding-Box zurück
+            }
+        } else {
+            // Spieler befindet sich auf der linken Seite
+            if (node.leftChild) {
+                return findVisibleArea(node.leftChild, playerX, playerY); // Weiter nach links
+            } else {
+                return node.leftBoundingBox; // Kein linker Kindknoten - gib linke Bounding-Box zurück
+            }
+        }
+    }
+
+    function findVisibleArea(node, playerX, playerY) {
+        if (!node) {
+            console.log("Ende des Baums erreicht.");
+            return null;
+        }
+
+        const side = (-playerX - node.xPartition) * node.changeY - (playerY - node.yPartition) * node.changeX;
+
+        // Falls beide changeX und changeY null sind, könnte dies ein Problem mit der Definition der Partitionsebene sein:
+        if (node.changeX === 0 && node.changeY === 0) {
+            console.error("Ungültige Partitionsebene! changeX und changeY sollten nicht beide null sein.");
+        }
+        console.log("Aktueller Knoten:", node);
+        console.log("Berechnete Seite:", side);
+        console.log("BERECHNUNG: ","(",playerX," - ",node.xPartition,") * ",node.changeY," - (",playerY," - ",node.yPartition,") * ",node.changeX)
+
+        if (side >= 0) {
+            console.log("Spieler ist auf der rechten Seite.");
+            return node.rightChild ? findVisibleArea(node.rightChild, -playerX, playerY) : node.rightBoundingBox;
+        } else {
+            console.log("Spieler ist auf der linken Seite.");
+            return node.leftChild ? findVisibleArea(node.leftChild, -playerX, playerY) : node.leftBoundingBox;
+        }
+    }
+
 
     var lastTime = 0; // Zeitstempel des letzten Frames
     var fps = 0; // Aktuelle FPS
@@ -851,10 +922,10 @@
                 speed -= .1;
             //player.camerarot.x = 0;
         }
-        updateDebugInfo();
         slowdown();
         applySpeed();
         setTransform();
+        updateDebugInfo();
         window.requestAnimationFrame(drawPlayerPositionOnMap);
         setTimeout( gameloop, 15);
     })();
