@@ -19,6 +19,7 @@ function handleFile() {
             $('.level-link').on('click', function() {
                 const levelKey = $(this).data('key');
                 loadLevel(jsonData[levelKey]).then((result) => {
+                    level_loaded = true;
                     $('#titlescreen').addClass("titlemelt").delay(2000).hide(0);
                 }).catch((error) => {
                     console.error(error); // Falls ein Fehler auftritt
