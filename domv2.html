@@ -118,11 +118,17 @@
         "left": 0,
         "right": 0
     };
+    let lastBspX = null;
+    let lastBspY = null;
+    let lastBspAngle = null;
+    let visibleCache = null;
+
     var sectorlist = [];
     var scalefactor = 0.2;
     var e1m1 = "";
     var current_sector = 0;
     var perspective = (Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)))/2;
+
 
     $( window ).resize(function() {
         perspective = (Math.sqrt(Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)))/2;
@@ -146,6 +152,28 @@
         `;
     }
 
+    function updateVisibility() {
+        const dx = player.pos.x - lastBspX;
+        const dy = player.pos.z - lastBspY;
+        const da = player.camerarot.y - lastBspAngle;
+
+        // Nur neu berechnen, wenn sich etwas spürbar geändert hat
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1 || Math.abs(da) > 2) {
+            visibleCache = computeVisibleSectors(
+                e1m1,
+                player.pos.x,
+                -player.pos.z,
+                player.camerarot.y
+            );
+
+            lastBspX = player.pos.x;
+            lastBspY = player.pos.z;
+            lastBspAngle = player.camerarot.y;
+        }
+        return visibleCache;
+    }
+
+
     $(document).ready(function () {
         $('#start_demo').on('click touch', function (){
             $.getJSON('ass/e1m1_dyn.json', function(data) {
@@ -161,6 +189,8 @@
 
         var element = document.querySelectorAll(".door");
     });
+
+
 
     function loadLevel(leveldata){
         return new Promise((resolve, reject) => {
@@ -188,12 +218,53 @@
                 addFloor(sector, key);
                 addCeiling(sector, key);
             });
-            e1m1['THINGS'].forEach(function (thing, key) {
+            e1m1['THINGS'].forEach(function (thing) {
                 if (thing.thingType == 1) {
+                    // Für BSP:
+                    player.mapX = thing.xPosition;
+                    player.mapY = thing.yPosition;
+
+                    // Für Rendering:
                     player.pos.x = -(thing.xPosition * scalefactor);
                     player.pos.z = -(thing.yPosition * scalefactor);
                 }
             });
+
+            let doomMinX = Infinity, doomMinY = Infinity;
+            let doomMaxX = -Infinity, doomMaxY = -Infinity;
+
+            for (let v of e1m1.VERTEXES) {
+                doomMinX = Math.min(doomMinX, v.x);
+                doomMaxX = Math.max(doomMaxX, v.x);
+                doomMinY = Math.min(doomMinY, v.y);
+                doomMaxY = Math.max(doomMaxY, v.y);
+            }
+
+            const engineX = player.pos.x;
+            const engineZ = player.pos.z;
+
+            const offsetX = engineX - doomMinX * scalefactor;
+            const offsetY = engineZ + doomMinY * scalefactor;
+
+            let engMinX = Infinity, engMaxX = -Infinity;
+            let engMinZ = Infinity, engMaxZ = -Infinity;
+
+            for (let v of e1m1.VERTEXES) {
+                // Engine-Koordinaten der Map-Vertices
+                const ex = v.x * 0.2;   // deine Engine skaliert mit 0.2
+                const ez = -v.y * 0.2;  // deine Engine invertiert Y → Z
+
+                engMinX = Math.min(engMinX, ex);
+                engMaxX = Math.max(engMaxX, ex);
+                engMinZ = Math.min(engMinZ, ez);
+                engMaxZ = Math.max(engMaxZ, ez);
+            }
+
+            console.log("ENGINE MAP BOUNDS:", engMinX, engMaxX, engMinZ, engMaxZ);
+
+
+            window.doomOffset = { offsetX, offsetY, scalefactor };
+
             //updateTree();
             resolve();
         });
@@ -320,10 +391,11 @@
                 e1m1,
                 // player.pos.x,
                 // player.pos.y,
-                -(player.pos.x),
-                -(player.pos.z),
+                player.pos.x,
+                -player.pos.z,
                 player.camerarot.y
             );
+            console.log("Player Doom coords:", player.pos.x, -player.pos.z);
 
             console.log("Sichtbare Sektoren:", result.visibleSectors);
             console.log("Sichtbare Subsectoren:", result.visibleSSECTORS);
@@ -756,6 +828,8 @@
         ctx.strokeStyle = '#00FF00';
         ctx.stroke();
 
+        console.log("PLAYER:", playx, playz);
+
         debugdata.playx = playx;
         debugdata.playz = playz;
         debugdata.playerx = player.pos.x;
@@ -785,9 +859,135 @@
         //     "Width:", bspw,
         //     "Height:", bsph
         // );
-        console.log("BSP ","X: ",bspx," Y:",bspy," W:",bspw," H:",bsph)
+        // console.log("BSP ","X: ",bspx," Y:",bspy," W:",bspw," H:",bsph)
 
     }
+    function drawVisibleSectorsOnMap(visible) {
+
+        const canvas = document.getElementById("minimapplayerlayer");
+        const ctx = canvas.getContext("2d");
+
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = "yellow";
+
+        const scale = 0.2;
+
+        // Spielerwinkel in Engine-Koordinaten
+        let ang = player.camerarot.y * Math.PI / 180;
+        ang -= Math.PI / 2;
+
+        if (ang < -Math.PI) ang += 2 * Math.PI;
+        if (ang >  Math.PI) ang -= 2 * Math.PI;
+
+
+        const fov = 90 * Math.PI / 180;
+        const maxDist = 2000;
+
+        visible.visibleSSECTORS.forEach(ssIndex => {
+
+            const points = getSubsectorPolygon(ssIndex);
+            if (points.length === 0) return;
+
+            // Doom-Zentrum
+            const c = polygonCenter(points);
+
+            // Doom -> Engine
+            const cx_eng = c.x * scale;
+            const cz_eng = -c.y * scale;
+
+            // Distanz im Engine-Space
+            const dx = cx_eng - player.pos.x;
+            const dz = cz_eng - player.pos.z;
+
+            const dist = Math.hypot(dx, dz);
+            console.log("dist > maxDist", dist , maxDist)
+            if (dist > maxDist) return;
+
+            // Winkel im Engine-Space
+            const a = Math.atan2(dz, dx);
+            let da = a - ang;
+
+            while (da > Math.PI) da -= 2 * Math.PI;
+            while (da < -Math.PI) da += 2 * Math.PI;
+            console.log("Math.abs(da) > fov / 2)", Math.abs(da) , (fov / 2))
+            if (Math.abs(da) > fov / 2) return;
+
+            // Jetzt Minimap-Zeichnung (Doom-Space)
+            const ss = e1m1.SSECTORS[ssIndex];
+    console.log("SECCOUNT:",ss.segCount)
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            ctx.beginPath();
+            for (let i = 0; i < ss.segCount; i++) {
+                const seg = e1m1.SEGS[ss.firstSeg + i];
+                const v = e1m1.VERTEXES[seg.startVertex];
+
+                const x = (-v.x * 5 * 0.07) + centerX;
+                const y = (v.y * 5 * 0.07) + centerY;
+
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+
+        });
+
+        ctx.restore();
+    }
+
+
+
+
+    function getSubsectorPolygon(ssIndex) {
+        const ss = e1m1.SSECTORS[ssIndex];
+        const points = [];
+
+        for (let i = 0; i < ss.segCount; i++) {
+            const seg = e1m1.SEGS[ss.firstSeg + i];
+
+            const v1 = e1m1.VERTEXES[seg.startVertex];
+            const v2 = e1m1.VERTEXES[seg.endVertex];
+
+            points.push({ x: v1.x, y: v1.y });
+            points.push({ x: v2.x, y: v2.y });
+        }
+
+        return points;
+    }
+
+
+    function polygonCenter(points) {
+        let x = 0, y = 0;
+        for (const p of points) {
+            x += p.x;
+            y += p.y;
+        }
+        return { x: x / points.length, y: y / points.length };
+    }
+
+
+
+
+    function subsectorCenter(ssIndex) {
+        const ss = e1m1.SSECTORS[ssIndex];
+        let sumX = 0, sumY = 0, count = 0;
+
+        for (let i = 0; i < ss.segCount; i++) {
+            const seg = e1m1.SEGS[ss.firstSeg + i];
+            const v = e1m1.VERTEXES[seg.startVertex];
+            sumX += v.x;
+            sumY += v.y;
+            count++;
+        }
+
+        return { x: sumX / count, y: sumY / count };
+    }
+
+
+
 
     class Node {
         constructor(xPartition, yPartition, changeX, changeY, rightBoundingBox, leftBoundingBox, rightChild, leftChild) {
@@ -958,90 +1158,81 @@
 
 
     function computeVisibleSectors(e1m1, playerX, playerY, playerAngleDeg) {
-        const playerAngle = playerAngleDeg * Math.PI / 180;
-        const nodes = e1m1.NODES;
+        const nodes    = e1m1.NODES;
         const ssectors = e1m1.SSECTORS;
-        const segs = e1m1.SEGS;
+        const segs     = e1m1.SEGS;
         const linedefs = e1m1.LINEDEFS;
         const sidedefs = e1m1.SIDEDEFS;
 
-        const visibleSectors = new Set();
+        const visibleSectors  = new Set();
         const visibleSSECTORS = new Set();
-
-        // Child-Index dekodieren (16-Byte SSECTOR-Struktur)
-        function decodeChild(child) {
-            if (child & 0x8000) {
-                const ssIndex = child & 0x7FFF;
-                if (ssIndex >= ssectors.length) {
-                    console.warn("Invalid subsector index:", ssIndex);
-                    return null;
-                }
-                return -1 - ssIndex; // Marker für subsector
-            }
-            return child;
-        }
-
-
 
         function pointOnFrontSide(node, x, y) {
             const dx = x - node.xPartition;
             const dy = y - node.yPartition;
-            return (dx * node.changeY - dy * node.changeX) <= 0;
+            const side = dx * node.changeY - dy * node.changeX;
+            return side > 0;
         }
 
-        function traverse(nodeIndex) {
+        function traverseSubsector(ssIndex) {
+            if (ssIndex < 0 || ssIndex >= ssectors.length) return;
 
-            if (nodeIndex < 0) {
-                const ssIndex = -1 - nodeIndex;
-                const ss = ssectors[ssIndex];
-                if (!ss) return;
+            const ss = ssectors[ssIndex];
+            visibleSSECTORS.add(ssIndex);
 
-                visibleSSECTORS.add(ssIndex);
-
-                for (let i = 0; i < ss.segCount; i++) {
-                    const seg = segs[ss.firstSeg + i];
-                    const ld = linedefs[seg.linedef];
-
-                    const sidedefIndex =
-                        (seg.direction === 0) ? ld.sidefront : ld.sideback;
-
-                    if (sidedefIndex !== 65535) {
-                        visibleSectors.add(sidedefs[sidedefIndex].sector);
-                    }
+            for (let i = 0; i < ss.segCount; i++) {
+                const seg = segs[ss.firstSeg + i];
+                const ld  = linedefs[seg.linedef];
+                const sidedefIndex = (seg.direction === 0) ? ld.sidefront : ld.sideback;
+                if (sidedefIndex !== 65535) {
+                    visibleSectors.add(sidedefs[sidedefIndex].sector);
                 }
-                return;
             }
-
+        }
+        function isNodeTransparent(nodeIndex) {
             const node = nodes[nodeIndex];
-            console.log("NODE",node);
-            console.log("Node", nodeIndex);
-            if(typeof node !== 'object') {
-                const {frontBBox, backBBox} = getNodeBBoxes(node);
 
-                console.log("Front BBox:", frontBBox);
-                console.log("Back BBox:", backBBox);
-                console.log("Player:", playerX, playerY, "Angle:", playerAngle);
-                console.log("Front in FOV:", bboxInFOV(frontBBox, playerX, playerY, playerAngle));
-                console.log("Back in FOV:", bboxInFOV(backBBox, playerX, playerY, playerAngle));
+            // Bounding boxes helfen nicht – wir müssen die Segs prüfen
+            // Also: wenn irgendein Seg im Subsector two-sided ist → transparent
+
+            // Finde alle Subsectoren, die unter diesem Node liegen
+            // (vereinfachte Version: immer true)
+            return true;
+        }
 
 
-                if (bboxInFOV(frontBBox, playerX, playerY, playerAngle)) {
-                    traverse(node.rightChild);
-                }
+        function traverseNode(nodeIndex) {
+            const node = nodes[nodeIndex];
+            if (!node) return;
 
-                if (bboxInFOV(backBBox, playerX, playerY, playerAngle)) {
-                    traverse(node.leftChild);
-                }
+            const front = pointOnFrontSide(node, playerX, playerY);
+
+            const frontChild = front ? node.rightChild : node.leftChild;
+            const backChild  = front ? node.leftChild  : node.rightChild;
+
+            // Front
+            if (frontChild & 0x8000) {
+                traverseSubsector(frontChild & 0x7FFF);
+            } else {
+                traverseNode(frontChild);
+            }
+
+            // Back
+            if (backChild & 0x8000) {
+                traverseSubsector(backChild & 0x7FFF);
+            } else {
+                traverseNode(backChild);
             }
         }
 
 
 
-        // Start: Root Node = letzter Eintrag
-        traverse(nodes.length - 1);
+
+        // Root: letzter Node
+        traverseNode(nodes.length - 1);
 
         return {
-            visibleSectors: Array.from(visibleSectors),
+            visibleSectors:  Array.from(visibleSectors),
             visibleSSECTORS: Array.from(visibleSSECTORS)
         };
     }
@@ -1052,35 +1243,37 @@
     var lastTime = 0; // Zeitstempel des letzten Frames
     var fps = 0; // Aktuelle FPS
 
-    (function gameloop() {
-        // Zeitdifferenz zwischen diesem und dem letzten Frame berechnen
+    function gameloop() {
+        console.log("GAMELOOP");
+
         var currentTime = Date.now();
         const deltaTime = currentTime - lastTime;
         lastTime = currentTime;
 
-        // FPS berechnen: 1 Sekunde (1000 ms) geteilt durch Delta-Time
         fps = 1000 / deltaTime;
         debugdata.fps = fps.toFixed(2);
 
-        if (forward){
-            if(speed<1)
-                speed += .1;
-            //player.camerarot.x = 0;
-        }
-        if (backward){
-            if(speed>-1)
-                speed -= .1;
-            //player.camerarot.x = 0;
-        }
-        if(level_loaded) {
+        if (forward && speed < 1) speed += .1;
+        if (backward && speed > -1) speed -= .1;
+
+        if (level_loaded) {
             slowdown();
             applySpeed();
             setTransform();
+
+            const visible = updateVisibility();
+            drawVisibleSectorsOnMap(visible);
+            drawPlayerPositionOnMap();
+
             updateDebugInfo();
-            window.requestAnimationFrame(drawPlayerPositionOnMap);
         }
-        setTimeout(gameloop, 15);
-    })();
+
+        requestAnimationFrame(gameloop);
+    }
+
+    requestAnimationFrame(gameloop);
+
+
 </script>
 
 

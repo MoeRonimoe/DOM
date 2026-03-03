@@ -314,73 +314,96 @@ function parseSsectorsLumpData(lumpContent) {
     return ssectors;
 }
 
+function hexDump(view, start, maxLength = 32) {
+    const end = Math.min(start + maxLength, view.byteLength);
+    const bytes = [];
+
+    for (let o = start; o < end; o++) {
+        const b = view.getUint8(o).toString(16).padStart(2, "0");
+        bytes.push(b);
+    }
+
+    return bytes.join(" ");
+}
+
+
+
 function parseNodesLumpData(lumpContent) {
     const nodes = [];
+    const view = new DataView(
+        lumpContent.buffer,
+        lumpContent.byteOffset,
+        lumpContent.byteLength
+    );
+
     for (let i = 0; i < lumpContent.byteLength; i += 28) {
-        // console.log("ROHDATEN: ",new Uint8Array(lumpContent.buffer, i, 28)); // Prüfen Sie die Rohdaten
-        // Lade die Kinder als uint16 für eine korrekte Interpretation der Bits
-        const rightChildRaw = new DataView(lumpContent.buffer, i + 16, 2).getUint16(0, true);
-        const leftChildRaw = new DataView(lumpContent.buffer, i + 18, 2).getUint16(0, true);
-
-        const isSubsector = (rightChildRaw & 0x8000) !== 0; // Höchstwertiges Bit prüfen
-        const value = isSubsector ? {subsector: rightChildRaw & 0x7FFF} : rightChildRaw; // Maskierung
-        console.log("VALUE ", value)
-        console.log(`Raw Value: ${rightChildRaw}, Binary: ${rightChildRaw.toString(2).padStart(16, '0')}`);
-
-
         const node = {
-            xPartition: new DataView(lumpContent.buffer, i, 2).getInt16(0, true),
-            yPartition: new DataView(lumpContent.buffer, i + 2, 2).getInt16(0, true),
-            changeX: new DataView(lumpContent.buffer, i + 4, 2).getInt16(0, true),
-            changeY: new DataView(lumpContent.buffer, i + 6, 2).getInt16(0, true),
-            rightBoundingBoxTop: new DataView(lumpContent.buffer, i + 8, 2).getInt16(0, true),
-            rightBoundingBoxBottom: new DataView(lumpContent.buffer, i + 10, 2).getInt16(0, true),
-            leftBoundingBoxTop: new DataView(lumpContent.buffer, i + 12, 2).getInt16(0, true),
-            leftBoundingBoxBottom: new DataView(lumpContent.buffer, i + 14, 2).getInt16(0, true),
+            xPartition: view.getInt16(i, true),
+            yPartition: view.getInt16(i + 2, true),
+            changeX:    view.getInt16(i + 4, true),
+            changeY:    view.getInt16(i + 6, true),
 
-            // Prüfe das 15. Bit, um zu entscheiden, ob es ein Subnode oder Subsector ist
-            rightChild: (rightChildRaw & 0x8000) === 0
-                ? rightChildRaw // Subnode-Index (Bit 15 nicht gesetzt)
-                : {subsector: rightChildRaw & 0x7FFF}, // Subsector-Nummer (untere 15 Bits)
-            leftChild: (leftChildRaw & 0x8000) === 0
-                ? leftChildRaw // Subnode-Index (Bit 15 nicht gesetzt)
-                : {subsector: leftChildRaw & 0x7FFF}, // Subsector-Nummer (untere 15 Bits)
+            rightBoundingBoxTop:    view.getInt16(i + 8,  true),
+            rightBoundingBoxBottom: view.getInt16(i + 10, true),
+            rightBoundingBoxLeft:   view.getInt16(i + 12, true),
+            rightBoundingBoxRight:  view.getInt16(i + 14, true),
 
-            rightBoundingBoxRight: new DataView(lumpContent.buffer, i + 20, 2).getInt16(0, true),
-            rightBoundingBoxLeft: new DataView(lumpContent.buffer, i + 22, 2).getInt16(0, true),
-            leftBoundingBoxRight: new DataView(lumpContent.buffer, i + 24, 2).getInt16(0, true),
-            leftBoundingBoxLeft: new DataView(lumpContent.buffer, i + 26, 2).getInt16(0, true),
+            leftBoundingBoxTop:    view.getInt16(i + 16, true),
+            leftBoundingBoxBottom: view.getInt16(i + 18, true),
+            leftBoundingBoxLeft:   view.getInt16(i + 20, true),
+            leftBoundingBoxRight:  view.getInt16(i + 22, true),
+
+            rightChild: view.getUint16(i + 24, true), // ✔️ korrekt
+            leftChild:  view.getUint16(i + 26, true), // ✔️ korrekt
         };
-        console.log("Raw RightChild:", rightChildRaw, "Processed:", node.rightChild);
-        console.log("Raw LeftChild:", leftChildRaw, "Processed:", node.leftChild);
 
         nodes.push(node);
     }
+
     return nodes;
 }
 
+
+
+
+
+
 function parseSectorsLumpData(lumpContent) {
     const sectors = [];
+
+    const view = new DataView(
+        lumpContent.buffer,
+        lumpContent.byteOffset,
+        lumpContent.byteLength
+    );
+
     for (let i = 0; i < lumpContent.byteLength; i += 26) {
         const sector = {
-            floorHeight: new DataView(lumpContent.buffer, i, 2).getInt16(0, true),
-            ceilingHeight: new DataView(lumpContent.buffer, i + 2, 2).getInt16(0, true),
-            floorTexture: String.fromCharCode.apply(
+            floorHeight:    view.getInt16(i, true),
+            ceilingHeight:  view.getInt16(i + 2, true),
+            floorTexture:   String.fromCharCode.apply(
                 null,
-                new Uint8Array(lumpContent.buffer.slice(i + 4, i + 12))
+                new Uint8Array(lumpContent.buffer.slice(
+                    lumpContent.byteOffset + i + 4,
+                    lumpContent.byteOffset + i + 12
+                ))
             ).replace(/\0/g, ''),
             ceilingTexture: String.fromCharCode.apply(
                 null,
-                new Uint8Array(lumpContent.buffer.slice(i + 12, i + 20))
+                new Uint8Array(lumpContent.buffer.slice(
+                    lumpContent.byteOffset + i + 12,
+                    lumpContent.byteOffset + i + 20
+                ))
             ).replace(/\0/g, ''),
-            lightLevel: new DataView(lumpContent.buffer, i + 20, 2).getUint16(0, true),
-            specialType: new DataView(lumpContent.buffer, i + 22, 2).getUint16(0, true),
-            tag: new DataView(lumpContent.buffer, i + 24, 2).getUint16(0, true),
+            lightLevel:  view.getUint16(i + 20, true),
+            specialType: view.getUint16(i + 22, true),
+            tag:         view.getUint16(i + 24, true),
         };
         sectors.push(sector);
     }
     return sectors;
 }
+
 
 function parseRejectLumpData(lumpContent) {
     const reject = [];
