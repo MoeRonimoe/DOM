@@ -56,12 +56,10 @@
         <br>
         <div class="triangle backward" id="mobilebackward"></div>
     </div>
-    <canvas id="minimap" width="350" height="300" style="border:1px solid #d3d3d3; display: block; position: absolute; z-index: 1;">
-        Your browser does not support the canvas element.
-    </canvas>
-    <canvas id="minimapplayerlayer" width="350" height="300" style="border:1px solid #d3d3d3; display: block; position: absolute; z-index: 2;">
-        Your browser does not support the canvas element.
-    </canvas>
+    <canvas id="minimap" width="350" height="300" style="position:absolute; z-index:1;"></canvas>
+    <canvas id="minimapSectors" width="350" height="300" style="position:absolute; z-index:2;"></canvas>
+    <canvas id="minimapPlayer" width="350" height="300" style="position:absolute; z-index:3;"></canvas>
+
     <div id="debuginfo"></div>
 </div>
 <script src="js/Mth.js"></script>
@@ -140,38 +138,60 @@
     };
 
     function updateDebugInfo() {
-        // Dynamisches Einfügen der Werte
+        debugdata.engine_player_x = player.pos.x;
+        debugdata.engine_player_z = player.pos.z;
+
+        debugdata.doom_player_x = player.pos.x / 0.2;
+        debugdata.doom_player_y = -(player.pos.z / 0.2);
+
+        debugdata.minimap_player_engine_x = (-player.pos.x * 5 * 0.07) + minimapadjustval;
+        debugdata.minimap_player_engine_z = (player.pos.z * 5 * 0.07) - minimapadjustval;
+
+        debugdata.minimap_player_doom_x = (player.pos.x / 0.2) * 0.07 + minimapadjustval;
+        debugdata.minimap_player_doom_z = -((-(player.pos.z / 0.2)) * 0.07) - minimapadjustval;
+
         const debuginfo = document.getElementById("debuginfo");
-        debuginfo.innerHTML = `
-            <p>FPS: ${debugdata.fps}</p>
-            <p>Minimap x: ${debugdata.playx}</p>
-            <p>Minimap z: ${debugdata.playz}</p>
-            <p>Player x: ${debugdata.playerx}</p>
-            <p>Player z: ${debugdata.playerz}</p>
-            <p>Current Sector: ${debugdata.sector}</p>
-        `;
+        let html = "<h3>Debug</h3>";
+        for (const key in debugdata) {
+            if (!debugdata.hasOwnProperty(key)) continue;
+            html += `<p><strong>${key}:</strong> ${debugdata[key]}</p>`;
+        }
+        debuginfo.innerHTML = html;
     }
+
 
     function updateVisibility() {
-        const dx = player.pos.x - lastBspX;
-        const dy = player.pos.z - lastBspY;
-        const da = player.camerarot.y - lastBspAngle;
+        // Engine → Doom
+        const doomX = -(player.pos.x / 0.2);
+        const doomY = -(player.pos.z / 0.2);
 
-        // Nur neu berechnen, wenn sich etwas spürbar geändert hat
-        if (Math.abs(dx) > 1 || Math.abs(dy) > 1 || Math.abs(da) > 2) {
-            visibleCache = computeVisibleSectors(
-                e1m1,
-                player.pos.x,
-                -player.pos.z,
-                player.camerarot.y
-            );
+        let doomAngleDeg = (90 - player.camerarot.y) % 360;
+        if (doomAngleDeg < 0) doomAngleDeg += 360;
 
-            lastBspX = player.pos.x;
-            lastBspY = player.pos.z;
-            lastBspAngle = player.camerarot.y;
-        }
+
+
+        // Sichtbarkeit: ALLE Sektoren, kein FOV hier
+        visibleCache = computeVisibleSectors(
+            e1m1,
+            doomX,
+            doomY,
+            doomAngleDeg // wird ignoriert, ist okay
+        );
+
+        // diese drei Werte brauchst du später für die Minimap-FOV
+        lastBspX      = doomX;
+        lastBspY      = doomY;
+        lastBspAngle  = doomAngleDeg;
+        debugdata.lastBspAngle = lastBspAngle;
+        debugdata.lastplayercameraroty = player.camerarot.y;
+
         return visibleCache;
     }
+
+
+
+
+
 
 
     $(document).ready(function () {
@@ -265,6 +285,14 @@
 
             window.doomOffset = { offsetX, offsetY, scalefactor };
 
+            window.doomBounds = {
+                minX: doomMinX,
+                minY: doomMinY,
+                maxX: doomMaxX,
+                maxY: doomMaxY
+            };
+
+
             //updateTree();
             resolve();
         });
@@ -330,6 +358,8 @@
         var yo = Math.cos(player.camerarot.y * (Math.PI/180));
         player.pos.x -= xo * speed;
         player.pos.z -= yo * speed;
+        debugdata.playerposx = player.pos.x;
+        debugdata.playerposz = player.pos.z;
     }
 
     function position(x, y, z) {
@@ -344,14 +374,14 @@
     var lastpos = new position(0, 0, 0);
     document.addEventListener("mousemove", function (ev) {
         if(true){//!forward && !backward) {
-            player.camerarot.x -= (ev.pageY - lastpos.y) / 2;
+            player.camerarot.x -= ev.movementY * 0.5;
             if (player.camerarot.x <= -90) {
                 player.camerarot.x = -90;
             }
             if (player.camerarot.x >= 90) {
                 player.camerarot.x = 90;
             }
-            player.camerarot.y += (ev.pageX - lastpos.x) / 2;
+            player.camerarot.y += ev.movementX * 0.5;
             while (player.camerarot.y > 360 || player.camerarot.y < -360) {  //wollen ja nicht das sie zu groß wird :)
                 if (player.camerarot.y > 360) {
                     player.camerarot.y -= 360;
@@ -359,8 +389,8 @@
                     player.camerarot.y += 360;
                 }
             }
-            lastpos.x = ev.pageX;
-            lastpos.y = ev.pageY;
+            player.camerarot.y += ev.movementX * 0.5;
+            player.camerarot.x -= ev.movementY * 0.5;
         }
     }, false);
     var camera = document.getElementById('camera');
@@ -697,6 +727,25 @@
         return sectorColors[sectorId];
     }
 
+    function doomToMinimap(x, y, player, canvas) {
+        const scale = 0.2;        // Doom → Engine
+        const minimapScale = 0.07; // Engine → Minimap
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // Doom → Engine
+        const ex = x * scale;
+        const ez = -y * scale;
+
+        // Engine → Minimap (relativ zum Spieler)
+        const mx = centerX + (ex - player.pos.x) * minimapScale;
+        const my = centerY + (ez - player.pos.z) * minimapScale;
+
+        return { mx, my };
+    }
+
+
     function addPlane(single_linedef, LINEDEFSnumber) {
         $('#level').append('<div id="linedef' + LINEDEFSnumber + '" class="has3d wall"></div>');
 
@@ -717,12 +766,14 @@
         const v1 = e1m1['VERTEXES'][single_linedef['startVertex']];
         const v2 = e1m1['VERTEXES'][single_linedef['endVertex']];
 
-        // Farbe setzen
         ctx.strokeStyle = color;
         ctx.beginPath();
-        ctx.moveTo((v1.x * 0.07) + minimapadjustval, -(v1.y * 0.07) - minimapadjustval);
-        ctx.lineTo((v2.x * 0.07) + minimapadjustval, -(v2.y * 0.07) - minimapadjustval);
+        ctx.moveTo((v1.x * 0.07) + minimapadjustval,
+            -(v1.y * 0.07) - minimapadjustval);
+        ctx.lineTo((v2.x * 0.07) + minimapadjustval,
+            -(v2.y * 0.07) - minimapadjustval);
         ctx.stroke();
+
 
 
         var distance = Math.sqrt(Math.pow((v2['x'] - v1['x']), 2) + Math.pow((v2['y'] - v1['y']), 2));
@@ -809,134 +860,97 @@
         return bestSector; // Gibt den Sektor mit der kleinsten Fläche zurück oder null, falls kein Treffer
     }
 
-    function drawPlayerPositionOnMap(){
-        var canvas = document.getElementById("minimapplayerlayer");
-        var ctx = canvas.getContext("2d");
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // console.log("CANVAS WIDTH: ",canvas.width, "CANVAS HEIGHT: ",canvas.height)
-        ctx.beginPath();
-        var mmscaleFactor = 0.07; // Verwenden Sie denselben Skalierungsfaktor für beide Canvas
-        var playx = (-player.pos.x * 5 * mmscaleFactor)+minimapadjustval;   //5 um das 0.2 scalefaktor umzukehren und die richtigen Ursprungscoords für die Berechnung zu verwenden
-        var playz = (player.pos.z * 5 * mmscaleFactor)-minimapadjustval;
-
-        // console.log("X: "+playx+"; Y: " + playz);
-        ctx.arc(playx, playz, 2, 0, 2 * Math.PI, false);
-        ctx.fillStyle = 'green';
-        ctx.fill();
-        ctx.lineWidth = 5;
-        ctx.strokeStyle = '#00FF00';
-        ctx.stroke();
-
-        console.log("PLAYER:", playx, playz);
-
-        debugdata.playx = playx;
-        debugdata.playz = playz;
-        debugdata.playerx = player.pos.x;
-        debugdata.playerz = player.pos.z;
-        // var bspx = (visibleArea.left * mmscaleFactor) - minimapadjustval;
-        // var bspy = -(visibleArea.top * mmscaleFactor) + minimapadjustval; // Top für die y-Position verwenden
-        // var bspw = ((visibleArea.right - visibleArea.left) * mmscaleFactor); // Breite zwischen rechter und linker Grenze
-        // var bsph = ((visibleArea.bottom - visibleArea.top) * mmscaleFactor); // Höhe zwischen unterer und oberer Grenzew
-        // ctx.strokeStyle = "blue";
-
-        var bspx = (visibleArea.left * mmscaleFactor) - minimapadjustval;
-        var bspy = (visibleArea.bottom * mmscaleFactor) + minimapadjustval; // Verwende bottom statt top
-        var bspw = ((visibleArea.right - visibleArea.left) * mmscaleFactor); // Breite
-        var bsph = (-(visibleArea.top - visibleArea.bottom) * mmscaleFactor); // Höhe, top - bottom für korrekte Richtung
-        ctx.strokeStyle = "blue";
-        ctx.rect(bspx, -bspy, bspw, bsph); // Zeichne Rechteck basierend auf sichtbarem Bereich
-        ctx.stroke();
-        // console.log("BSP ","X: ",bspx," Y:",bspy," W:",bspw," H:",bsph)
-        // console.log("BSP-Werte:",
-        //     "X Min:", visibleArea.left,
-        //     "X Max:", visibleArea.right,
-        //     "Y Min:", visibleArea.bottom,
-        //     "Y Max:", visibleArea.top,
-        //     "Berechnetes Rechteck: ",
-        //     "X:", bspx,
-        //     "Y:", bspy,
-        //     "Width:", bspw,
-        //     "Height:", bsph
-        // );
-        // console.log("BSP ","X: ",bspx," Y:",bspy," W:",bspw," H:",bsph)
-
-    }
-    function drawVisibleSectorsOnMap(visible) {
-
-        const canvas = document.getElementById("minimapplayerlayer");
+    function drawPlayerPositionOnMap() {
+        const canvas = document.getElementById("minimapPlayer");
         const ctx = canvas.getContext("2d");
 
-        ctx.save();
-        ctx.globalAlpha = 0.35;
-        ctx.fillStyle = "yellow";
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const scale = 0.2;
+        // Engine → Doom
+        const doomX = player.pos.x / 0.2;
+        const doomY = -(player.pos.z / 0.2);
 
-        // Spielerwinkel in Engine-Koordinaten
-        let ang = player.camerarot.y * Math.PI / 180;
-        ang -= Math.PI / 2;
+        // Doom → Minimap
+        const pmx = doomX * 0.07 + minimapadjustval;
+        const pmy = -(doomY * 0.07) - minimapadjustval;
 
-        if (ang < -Math.PI) ang += 2 * Math.PI;
-        if (ang >  Math.PI) ang -= 2 * Math.PI;
+        var mmscaleFactor = 0.07; // Verwenden Sie denselben Skalierungsfaktor für beide Canvas
+
+// Doom → Minimap
+        const playx = -(doomX * 0.07) + minimapadjustval;
+        const playz = -(doomY * 0.07) - minimapadjustval;
 
 
-        const fov = 90 * Math.PI / 180;
-        const maxDist = 2000;
+        debugdata.MiniMapPlayerposx = playx;
+        debugdata.MiniMapPlayerposz = playz;
 
-        visible.visibleSSECTORS.forEach(ssIndex => {
-
-            const points = getSubsectorPolygon(ssIndex);
-            if (points.length === 0) return;
-
-            // Doom-Zentrum
-            const c = polygonCenter(points);
-
-            // Doom -> Engine
-            const cx_eng = c.x * scale;
-            const cz_eng = -c.y * scale;
-
-            // Distanz im Engine-Space
-            const dx = cx_eng - player.pos.x;
-            const dz = cz_eng - player.pos.z;
-
-            const dist = Math.hypot(dx, dz);
-            console.log("dist > maxDist", dist , maxDist)
-            if (dist > maxDist) return;
-
-            // Winkel im Engine-Space
-            const a = Math.atan2(dz, dx);
-            let da = a - ang;
-
-            while (da > Math.PI) da -= 2 * Math.PI;
-            while (da < -Math.PI) da += 2 * Math.PI;
-            console.log("Math.abs(da) > fov / 2)", Math.abs(da) , (fov / 2))
-            if (Math.abs(da) > fov / 2) return;
-
-            // Jetzt Minimap-Zeichnung (Doom-Space)
-            const ss = e1m1.SSECTORS[ssIndex];
-    console.log("SECCOUNT:",ss.segCount)
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-
-            ctx.beginPath();
-            for (let i = 0; i < ss.segCount; i++) {
-                const seg = e1m1.SEGS[ss.firstSeg + i];
-                const v = e1m1.VERTEXES[seg.startVertex];
-
-                const x = (-v.x * 5 * 0.07) + centerX;
-                const y = (v.y * 5 * 0.07) + centerY;
-
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.closePath();
-            ctx.fill();
-
-        });
-
-        ctx.restore();
+        ctx.beginPath();
+        ctx.arc(playx, playz, 4, 0, 2 * Math.PI);
+        ctx.fillStyle = 'green';
+        ctx.fill();
     }
+
+    function drawVisibleSectorsOnMap(ctx, visible) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        const { visibleSSECTORS } = visible;
+        const ssectors  = e1m1.SSECTORS;
+        const segs      = e1m1.SEGS;
+        const vertexes  = e1m1.VERTEXES;
+
+        const halfFov = (90 * Math.PI / 180) / 2;
+
+        // Spieler in DOOM-Space
+        const doomX = -(player.pos.x / 0.2);
+        const doomY = -(player.pos.z / 0.2);
+
+        // Doom → Minimap
+        const pmx = doomX * 0.07 + minimapadjustval;
+        const pmy = -(doomY * 0.07) - minimapadjustval;
+
+        // Doom-Winkel
+        const ang = lastBspAngle * Math.PI / 180;
+
+        for (const ssIndex of visibleSSECTORS) {
+            const ss = ssectors[ssIndex];
+
+            for (let i = 0; i < ss.segCount; i++) {
+                const seg = segs[ss.firstSeg + i];
+                const v1  = vertexes[seg.startVertex];
+                const v2  = vertexes[seg.endVertex];
+
+                // Mittelpunkt in DOOM-Space
+                const mx = (v1.x + v2.x) / 2;
+                const my = (v1.y + v2.y) / 2;
+
+                // FOV-Test in DOOM-Space
+                const dx = mx - doomX;
+                const dy = my - doomY;
+
+                const a = Math.atan2(dy, dx);
+                let da = a - ang;
+
+                while (da < -Math.PI) da += 2 * Math.PI;
+                while (da >  Math.PI) da -= 2 * Math.PI;
+
+                if (Math.abs(da) > halfFov) continue;
+
+                // Segment zeichnen: DOOM → Minimap
+                const m1x = v1.x * 0.07 + minimapadjustval;
+                const m1y = -(v1.y * 0.07) - minimapadjustval;
+
+                const m2x = v2.x * 0.07 + minimapadjustval;
+                const m2y = -(v2.y * 0.07) - minimapadjustval;
+
+                ctx.beginPath();
+                ctx.moveTo(m1x, m1y);
+                ctx.lineTo(m2x, m2y);
+                ctx.stroke();
+            }
+        }
+    }
+
+
 
 
 
@@ -1157,7 +1171,7 @@
     }
 
 
-    function computeVisibleSectors(e1m1, playerX, playerY, playerAngleDeg) {
+    function computeVisibleSectors(e1m1, playerX, playerY, _playerAngleDeg) {
         const nodes    = e1m1.NODES;
         const ssectors = e1m1.SSECTORS;
         const segs     = e1m1.SEGS;
@@ -1189,17 +1203,6 @@
                 }
             }
         }
-        function isNodeTransparent(nodeIndex) {
-            const node = nodes[nodeIndex];
-
-            // Bounding boxes helfen nicht – wir müssen die Segs prüfen
-            // Also: wenn irgendein Seg im Subsector two-sided ist → transparent
-
-            // Finde alle Subsectoren, die unter diesem Node liegen
-            // (vereinfachte Version: immer true)
-            return true;
-        }
-
 
         function traverseNode(nodeIndex) {
             const node = nodes[nodeIndex];
@@ -1210,14 +1213,12 @@
             const frontChild = front ? node.rightChild : node.leftChild;
             const backChild  = front ? node.leftChild  : node.rightChild;
 
-            // Front
             if (frontChild & 0x8000) {
                 traverseSubsector(frontChild & 0x7FFF);
             } else {
                 traverseNode(frontChild);
             }
 
-            // Back
             if (backChild & 0x8000) {
                 traverseSubsector(backChild & 0x7FFF);
             } else {
@@ -1225,10 +1226,6 @@
             }
         }
 
-
-
-
-        // Root: letzter Node
         traverseNode(nodes.length - 1);
 
         return {
@@ -1236,6 +1233,7 @@
             visibleSSECTORS: Array.from(visibleSSECTORS)
         };
     }
+
 
 
 
@@ -1262,7 +1260,9 @@
             setTransform();
 
             const visible = updateVisibility();
-            drawVisibleSectorsOnMap(visible);
+            const canvassec = document.getElementById("minimapSectors");
+            const ctx = canvassec.getContext("2d");
+            drawVisibleSectorsOnMap(ctx, visible);
             drawPlayerPositionOnMap();
 
             updateDebugInfo();
